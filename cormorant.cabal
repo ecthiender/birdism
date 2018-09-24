@@ -2,11 +2,11 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: acc6d3d056b8a36b05b039db5cc1c105de395a038439a4c4c8198192144cf073
+-- hash: 8407b15cf9c5defb05b875f352f267c2b394867ea0f1aef04f0032e7be7d5d86
 
 name:           cormorant
 version:        0.1.0.0
-description:    Please see the README on Github at <https://github.com/ecthiender/cormorant#readme>
+description:    Please see the README on Github at <https://gitlab.com/rayanon/cormorant#readme>
 homepage:       https://github.com/ecthiender/cormorant#readme
 bug-reports:    https://github.com/ecthiender/cormorant/issues
 author:         Anon Ray

@@ -1,3 +1,3 @@
-# Changelog for bih-hask
+# Changelog for cormorant
 
 ## Unreleased changes
