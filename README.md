@@ -18,10 +18,10 @@ of observation. Then it takes those common species name, and does a Flickr
 search for photos, and displays them to you!
 
 # Development
-The backend is in Haskell.
+The backend is in Haskell. The frontend is planned in HyperApp.
 
 # License
-See LICENSE file.
+BSD3 license. See LICENSE file.
 
 # Contributing
 Submit an issue or a pull request.

@@ -22,13 +22,24 @@ description:         Please see the README on Github at <https://gitlab.com/raya
 dependencies:
 - base >= 4.7 && < 5
 - text
-- containers
+- unordered-containers
 - time
 - mtl
 - wreq
+- lens
+- aeson
+- aeson-casing
+- bytestring
+- wai
+- Spock-core
+- http-types
 
 library:
   source-dirs: src
+
+ghc-options:
+- -O2
+- -Wall
 
 executables:
   cormorant:
@@ -38,6 +49,8 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -O2
+    - -Wall
     dependencies:
     - cormorant
 

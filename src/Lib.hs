@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -5,88 +6,109 @@ module Lib
     ( getCorpus
     , Family
     , Region (..)
+    , Corpus
+    , CommonName
+    , ImgUrl
+    , getImageUrls
+    , App
     ) where
 
-import           Control.Monad.IO.Class (liftIO)
-import           Control.Monad.Reader   (ReaderT, ask)
+import           Control.Monad          (when)
+import           Control.Monad.Except   (ExceptT, MonadError, throwError)
+import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           Control.Monad.Reader   (MonadReader, ReaderT, ask)
+import           Data.Text              (Text)
 import           Data.Time.Clock        (getCurrentTime)
 
-import qualified Data.Map.Strict        as M
+import qualified Data.Aeson             as J
+import qualified Data.HashMap.Strict    as Map
 import qualified Data.Text              as T
-import qualified Network.Wreq           as W
 
 import           Config
+import           Ebird.Region           (ChecklistObservation (..),
+                                         SubRegion (..), SubRegions (..),
+                                         getSubRegions, searchCheckLists)
+import           Flickr.Photos          (searchPhotos)
+import           Types
 
 
-type ScientificName = T.Text
-type CommonName     = T.Text
-type SpeciesCode    = T.Text
-
-type Family         = T.Text
-type RegionCode     = T.Text
-type ImgUrl         = T.Text
-
-data Bird = Bird
-  { bScName        :: !ScientificName
-  , bComName       :: !CommonName
-  , bSpCode        :: !SpeciesCode
-  , bCategory      :: !(Maybe T.Text)
-  , bOrder         :: !(Maybe T.Text)
-  , bFamilyComName :: !T.Text
-  } deriving (Show, Eq)
-
-newtype Region = Region { getRegion :: T.Text }
-  deriving (Show)
+type ImgUrl = Text
 
 -- Corpus is the result type of this program. This basically means the corpus
 -- (images of birds) for the end user to study
-type Corpus = M.Map CommonName [ImgUrl]
+type Corpus = Map.HashMap CommonName [ImgUrl]
 
-data Checklist
-  = Checklist
-  { cRegion :: RegionCode
-  , cBirds  :: [Bird]
-  } deriving (Show, Eq)
 
+data AppError
+  = AESearchError Text
+  deriving (Show)
+
+instance J.ToJSON AppError where
+  toJSON a = case a of
+    AESearchError e -> J.object [ "code" J..= ("search-error" :: Text)
+                                , "error" J..= e
+                                ]
 
 -- Our own monad!
-type App = ReaderT AppConfig IO
+type App = ReaderT AppConfig (ExceptT AppError IO)
+
+-- type alias our quite-used constriaints. we wan't IO capability and Reader of
+-- our AppConfig
+type Search m = (MonadIO m, MonadReader AppConfig m, MonadError AppError m)
 
 sampleBird :: Bird
 sampleBird = Bird "Poephila cincta atropygialis" "Black-throated Finch" "bktfin1" Nothing Nothing "Waxbills and Allies"
 
-
-getCorpus :: Region -> Family -> App Corpus
+getCorpus :: Search m => Region -> Family -> m Corpus
 getCorpus region family = do
   allSpecies <- getSpecies family
-  checklist  <- getChecklist =<< getRegionCode region
+  regcode    <- getRegionCode region
+  checklist  <- getChecklist regcode family
   let matchedSpecies = filter (\s -> bSpCode s `elem` spCodes allSpecies) (cBirds checklist)
-  getImageUrls matchedSpecies
-  where spCodes = map bSpCode
+  getImages matchedSpecies
 
-getRegionCode :: Region -> App RegionCode
-getRegionCode region = do
-  r <- ask
-  liftIO $ print $ (ebcToken . acEBird) r
-  ct <- liftIO getCurrentTime
-  liftIO $ print ct
-  return "US-NY-109"
+  where
+    spCodes = map bSpCode
 
-getChecklist :: RegionCode -> App Checklist
-getChecklist rc = do
-  ct <- liftIO getCurrentTime
-  liftIO $ print ct
-  return $ Checklist rc [sampleBird]
+getRegionCode :: Search m => Region -> m RegionCode
+getRegionCode (Region region) = do
+  subregions <- getSubRegions
+  let isRegion x = T.toLower region == T.toLower (_srName x)
+  let narrRegions = filter isRegion $ unSubRegions subregions
+  liftIO $ print narrRegions
+  when (null narrRegions) $
+    throwError $ AESearchError $ "could not find region '" <> region <> "'"
+  return $ _srCode $ head narrRegions
 
-getSpecies :: Family -> App [Bird]
+getChecklist :: Search m => RegionCode -> Family -> m Checklist
+getChecklist rc family = do
+  checklists <- searchCheckLists rc
+  liftIO $ print checklists
+  let birds = map checklistToBird checklists
+  return $ Checklist rc birds
+  where
+    checklistToBird (ChecklistObservation scName comName spCode) =
+      Bird scName comName spCode Nothing Nothing family
+
+getSpecies :: Search m => Family -> m [Bird]
 getSpecies family = do
+  let q = "select sp_code from taxonomy_db where lower(family_common_name) "
+        <> "like :family:"
+      param = T.toLower family
   ct <- liftIO getCurrentTime
   liftIO $ print ct
   return [sampleBird]
 
-getImageUrls :: [Bird] -> App Corpus
-getImageUrls birds = do
-  ct <- liftIO getCurrentTime
-  liftIO $ print ct
-  let cn = bComName $ head birds
-  return $ M.fromList [(cn, ["img-url-1"])]
+getImages :: Search m => [Bird] -> m Corpus
+getImages birds = do
+  let cns = map bComName birds
+  urls <- mapM (getImageUrls . bComName) birds
+  let x = (head cns, head urls)
+  liftIO $ print x
+  return $ Map.fromList $ zip cns urls
+
+getImageUrls :: Search m => CommonName -> m [ImgUrl]
+getImageUrls cn = do
+  config <- ask
+  let apiKey = fcKey $ acFlickr config
+  liftIO $ searchPhotos apiKey cn
