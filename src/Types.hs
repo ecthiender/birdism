@@ -3,18 +3,32 @@
 
 module Types where
 
-import           Data.Text    (Text)
-import           GHC.Generics (Generic)
+import           Data.Hashable
+import           Data.Text     (Text)
+import           GHC.Generics  (Generic)
 
-import qualified Data.Aeson   as J
+import qualified Data.Aeson    as J
 
 
-type ScientificName = Text
-type CommonName     = Text
-type SpeciesCode    = Text
+newtype ScientificName
+  = ScientificName { uScientificName :: Text }
+  deriving (Show, Eq)
 
-type Family         = Text
-type RegionCode     = Text
+newtype CommonName
+  = CommonName { uCommonName :: Text }
+  deriving (Show, Eq, Generic, Hashable, J.FromJSONKey, J.ToJSONKey)
+
+newtype SpeciesCode
+  = SpeciesCode { uSpeciesCode :: Text }
+  deriving (Show, Eq)
+
+newtype Family
+  = Family { uFamily :: Text }
+  deriving (Show, Eq, Generic, J.FromJSON, J.ToJSON)
+
+newtype RegionCode
+  = RegionCode { uRegionCode :: Text }
+  deriving (Show, Eq, Generic, J.FromJSON, J.ToJSON)
 
 -- indicating a particular species; maybe in future change the name to `Species`
 data Bird
@@ -28,7 +42,7 @@ data Bird
   } deriving (Show, Eq)
 
 newtype Region
-  = Region { getRegion :: Text }
+  = Region { uRegion :: Text }
   deriving (Show, Eq, Generic, J.FromJSON, J.ToJSON)
 
 data Checklist

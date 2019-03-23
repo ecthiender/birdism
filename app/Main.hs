@@ -13,7 +13,6 @@ import qualified Data.ByteString    as B
 import qualified Data.Text          as T
 import qualified Data.Text.IO       as T
 
-import           Lib
 import           Server
 
 
@@ -32,6 +31,5 @@ main = do
   let filepath = fromMaybe defaultConfigFilepath env
   configFile <- B.readFile filepath
   case J.eitherDecodeStrict configFile of
-    Left e -> failExit $ "error parsing config file: " <> T.pack e
-    Right config -> do
-      runSpock 8888 $ httpApp config
+    Left e       -> failExit $ "error parsing config file: " <> T.pack e
+    Right config -> runSpock 8888 $ httpApp config

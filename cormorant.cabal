@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5eacdd7ae3a92f0205925c5387dcd3578bf4dfc8b430fe67f8c089ec23143175
+-- hash: def2971bde26ffc2dd2eed526ce5949d07ad82b73677f6881ccd9fec294507d8
 
 name:           cormorant
 version:        0.1.0.0
@@ -35,9 +35,11 @@ library
     , aeson-casing
     , base >=4.7 && <5
     , bytestring
+    , hashable
     , http-types
     , lens
     , mtl
+    , sqlite-simple
     , text
     , time
     , unordered-containers
@@ -68,9 +70,11 @@ executable cormorant
     , base >=4.7 && <5
     , bytestring
     , cormorant
+    , hashable
     , http-types
     , lens
     , mtl
+    , sqlite-simple
     , text
     , time
     , unordered-containers
@@ -93,9 +97,11 @@ test-suite cormorant-test
     , base >=4.7 && <5
     , bytestring
     , cormorant
+    , hashable
     , http-types
     , lens
     , mtl
+    , sqlite-simple
     , text
     , time
     , unordered-containers

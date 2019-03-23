@@ -43,7 +43,6 @@ getSubRegions :: (MonadReader AppConfig m, MonadIO m) => m SubRegions
 getSubRegions = do
   token <- asks $ ebcToken . acEbird
   resp  <- liftIO $ W.getWith (opts token) subregionListUrl
-  liftIO $ print (resp ^. W.responseBody)
   case J.eitherDecode (resp ^. W.responseBody) of
     Left e       -> do
       liftIO $ print $ "parsing failed: " <> e
@@ -69,10 +68,9 @@ searchCheckListUrl reg = "https://ebird.org/ws2.0/data/obs/"
 searchCheckLists
   :: (MonadReader AppConfig m, MonadIO m)
   => RegionCode -> m [ChecklistObservation]
-searchCheckLists region = do
+searchCheckLists (RegionCode region) = do
   token <- asks $ ebcToken . acEbird
   resp  <- liftIO $ W.getWith (opts token) (searchCheckListUrl region)
-  liftIO $ print (resp ^. W.responseBody)
   case J.eitherDecode (resp ^. W.responseBody) of
     Left e -> do
       liftIO $ print $ "parsing failed: " <> e
