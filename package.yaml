@@ -21,20 +21,37 @@ description:         Please see the README on Github at <https://gitlab.com/raya
 
 dependencies:
 - base >= 4.7 && < 5
+
+# use text for string-like everything
 - text
+# for our monad stack
+- mtl
+
+# for hashmap (using it in results)
 - hashable
 - unordered-containers
-- time
-- mtl
+
+# for sqlite database access
+- sqlite-simple
+
+# for making http requests to 3rd party APIs
 - wreq
-- lens
+
+# for parsing and building json request/responses
 - aeson
 - aeson-casing
+- lens
+
+# for efficient representation in some cases
 - bytestring
-- wai
+- time
+
+# for out http webserver
 - Spock-core
 - http-types
-- sqlite-simple
+- wai
+- wai-middleware-static
+#- wai-extra
 
 library:
   source-dirs: src

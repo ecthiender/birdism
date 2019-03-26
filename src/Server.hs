@@ -4,12 +4,14 @@ module Server where
 
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import           Data.Text                 (Text)
+import           Data.Text                     (Text)
 import           Web.Spock.Core
 
-import qualified Data.Aeson                as J
-import qualified Network.HTTP.Types.Status as HTTP
-import qualified Network.Wai               as Wai
+import qualified Data.Aeson                    as J
+import qualified Network.HTTP.Types.Status     as HTTP
+import qualified Network.Wai                   as Wai
+
+import           Network.Wai.Middleware.Static
 
 import           Api
 import           Config
@@ -20,9 +22,10 @@ jsonHeader = ("Content-Type", "application/json")
 
 httpApp :: AppConfig -> IO Wai.Middleware
 httpApp config = spockT id $ do
-  get "/ping" $ text "pong"
+  middleware $  staticPolicy (addBase "../app/")
+  get "api/ping" $ text "pong"
 
-  post "v1/api" $ do
+  post "api/v1/search" $ do
     req <- jsonBody'
     res <- liftIO $ runExceptT $ runReaderT (processSearch req) config
     case res of

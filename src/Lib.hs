@@ -4,15 +4,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Lib
-    ( getCorpus
-    , Family
-    , Region (..)
-    , Corpus
-    , CommonName
-    , ImgUrl
-    , getImageUrls
-    , App
-    ) where
+  ( getCorpus
+  , Family
+  , Region (..)
+  , Corpus
+  , CommonName
+  , ImgUrl
+  , getImageUrls
+  , App
+  ) where
 
 import           Control.Monad          (when)
 import           Control.Monad.Except   (ExceptT, MonadError, throwError)

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: def2971bde26ffc2dd2eed526ce5949d07ad82b73677f6881ccd9fec294507d8
+-- hash: eac97a2070d40a548e43b81655341bfadaf3c9ee92c797a37ac2d813be7571c2
 
 name:           cormorant
 version:        0.1.0.0
@@ -44,13 +44,13 @@ library
     , time
     , unordered-containers
     , wai
+    , wai-middleware-static
     , wreq
   exposed-modules:
       Api
       Config
       Ebird.Region
       Flickr.Photos
-      Foo
       Lib
       Server
       Types
@@ -79,6 +79,7 @@ executable cormorant
     , time
     , unordered-containers
     , wai
+    , wai-middleware-static
     , wreq
   other-modules:
       Paths_cormorant
@@ -106,6 +107,7 @@ test-suite cormorant-test
     , time
     , unordered-containers
     , wai
+    , wai-middleware-static
     , wreq
   other-modules:
       Paths_cormorant
