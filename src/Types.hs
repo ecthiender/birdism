@@ -30,7 +30,7 @@ newtype RegionCode
   = RegionCode { uRegionCode :: Text }
   deriving (Show, Eq, Generic, J.FromJSON, J.ToJSON)
 
--- indicating a particular species; maybe in future change the name to `Species`
+-- | A particular species; maybe in future change the name to `Species`
 data Bird
   = Bird
   { bScName        :: !ScientificName

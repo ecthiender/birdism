@@ -7,29 +7,30 @@ module Lib
   ( getCorpus
   , Family
   , Region (..)
-  , Corpus
+  , SearchResult
   , CommonName
   , ImgUrl
   , getImageUrls
+  , getFamilyNames
   , App
   ) where
 
-import           Control.Monad          (when)
-import           Control.Monad.Except   (ExceptT, MonadError, throwError)
-import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Control.Monad.Reader   (MonadReader, ReaderT, ask)
-import           Data.Text              (Text)
+import           Control.Monad.Except       (ExceptT, MonadError, throwError)
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
+import           Control.Monad.Reader       (MonadReader, ReaderT, asks)
+import           Data.Maybe                 (fromMaybe)
+import           Data.Text                  (Text)
 
-import qualified Data.Aeson             as J
-import qualified Data.HashMap.Strict    as Map
-import qualified Data.Text              as T
-import qualified Database.SQLite.Simple as Db
+import qualified Data.Aeson                 as J
+import qualified Data.HashMap.Strict        as Map
+import qualified Data.Text                  as T
+import qualified Database.PostgreSQL.Simple as PG
+import qualified Database.SQLite.Simple     as Db
 
 import           Config
-import           Ebird.Region           (ChecklistObservation (..),
-                                         SubRegion (..), SubRegions (..),
-                                         getSubRegions, searchCheckLists)
-import           Flickr.Photos          (searchPhotos)
+import           Ebird.Region               (ChecklistObservation (..), SubRegion (..),
+                                             SubRegions (..), getSubRegions, searchCheckLists)
+import           Flickr.Photos              (searchPhotos)
 import           Types
 
 
@@ -37,12 +38,11 @@ type ImgUrl = Text
 
 -- Corpus is the result type of this program. This basically means the corpus
 -- (images of birds) for the end user to study
-type Corpus = Map.HashMap CommonName [ImgUrl]
-
+type SearchResult = Map.HashMap CommonName [ImgUrl]
 
 data AppError
-  = AESearchError Text
-  | AEDbError Text
+  = AESearchError !Text
+  | AEDbError !Text
   deriving (Show)
 
 instance J.ToJSON AppError where
@@ -59,12 +59,10 @@ encodeErr code e =
 -- Our own monad!
 type App = ReaderT AppConfig (ExceptT AppError IO)
 
--- type alias our quite-used constriaints. we wan't IO capability and Reader of
--- our AppConfig
-type Search m = (MonadIO m, MonadReader AppConfig m, MonadError AppError m)
+-- type alias our quite-used constriaints. we want IO capability and Reader of our AppConfig
+type MonadApp m = (MonadIO m, MonadReader AppConfig m, MonadError AppError m)
 
-
-getCorpus :: Search m => Region -> Family -> m Corpus
+getCorpus :: MonadApp m => Region -> Family -> m SearchResult
 getCorpus region family = do
   allSpecies <- getSpecies family
   debug "ALL SPECIES" allSpecies
@@ -74,8 +72,7 @@ getCorpus region family = do
   checklist  <- getChecklist regcode family
   debug "CHECKLIST" (map bSpCode $ cBirds checklist)
   liftIO $ print $ length (cBirds checklist)
-  let matchedSpecies =
-        filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
+  let matchedSpecies = filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
   debug "MATCHED SPECIES" matchedSpecies
   liftIO $ print $ length matchedSpecies
   getImages matchedSpecies
@@ -90,17 +87,18 @@ getCorpus region family = do
       liftIO $ putStrLn "<<<<<===============================>>>>>>>>"
 
 
-getRegionCode :: Search m => Region -> m RegionCode
+getRegionCode :: MonadApp m => Region -> m RegionCode
 getRegionCode (Region region) = do
   subregions <- getSubRegions
   let isRegion x = T.toLower region == T.toLower (_srName x)
   let narrRegions = filter isRegion $ unSubRegions subregions
   --liftIO $ print narrRegions
-  when (null narrRegions) $
-    throwError $ AESearchError $ "could not find region '" <> region <> "'"
-  return $ _srCode $ head narrRegions
+  case narrRegions of
+    []      -> throwError $ AESearchError $ "could not find region '" <> region <> "'"
+    (reg:_) -> return $ _srCode reg
 
-getChecklist :: Search m => RegionCode -> Family -> m Checklist
+-- | Given a 'RegionCode'
+getChecklist :: MonadApp m => RegionCode -> Family -> m Checklist
 getChecklist rc family = do
   checklists <- searchCheckLists rc
   --liftIO $ print checklists
@@ -117,7 +115,9 @@ newtype DbRes = DbRes Text
 instance Db.FromRow DbRes where
   fromRow = DbRes <$> Db.field
 
-getSpecies :: Search m => Family -> m [SpeciesCode]
+-- | Given a 'Family' name, fetch a list of species belonging to that family. This is fetched from
+-- our database, which contains the entire taxonomy for now
+getSpecies :: MonadApp m => Family -> m [SpeciesCode]
 getSpecies (Family family) = do
   conn <- liftIO $ Db.open "../ws/bird.db"
   let q = "select sp_code from taxonomy_db where lower(family_common_name) "
@@ -126,16 +126,24 @@ getSpecies (Family family) = do
   res <- liftIO $ Db.queryNamed conn q [":family" Db.:= T.toLower _family]
   return $ map (\(DbRes r) -> SpeciesCode r) res
 
-getImages :: Search m => [Bird] -> m Corpus
+-- | Given a list of 'Bird's, get the final search result, by combining the common names and a list
+-- of image URLs into a hashmap
+getImages :: MonadApp m => [Bird] -> m SearchResult
 getImages birds = do
-  let cns = map bComName birds
+  let commonNames = map bComName birds
   urls <- mapM (getImageUrls . bComName) birds
-  --let x = (head cns, head urls)
-  --liftIO $ print x
-  return $ Map.fromList $ zip cns urls
+  return $ Map.fromList $ zip commonNames urls
 
-getImageUrls :: Search m => CommonName -> m [ImgUrl]
-getImageUrls cn = do
-  config <- ask
-  let apiKey = fcKey $ acFlickr config
-  liftIO $ searchPhotos apiKey (uCommonName cn)
+-- | Given a 'CommonName' fetch a list of image urls from flickr
+getImageUrls :: MonadApp m => CommonName -> m [ImgUrl]
+getImageUrls (CommonName cn) = do
+  apiKey <- asks $ fcKey . acFlickr
+  liftIO $ searchPhotos apiKey cn
+
+getFamilyNames :: MonadApp m => m [Text]
+getFamilyNames = do
+  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
+  res <- liftIO $ PG.query_ conn "select distinct(family_common_name) from taxonomy"
+  let familyCommonNames = fmap (fromMaybe "" . PG.fromOnly) res
+  liftIO $ putStrLn $ ">>> Total no of families found: " <> show (length familyCommonNames)
+  return familyCommonNames

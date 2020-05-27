@@ -5,6 +5,8 @@ module Api where
 import qualified Data.Aeson.Casing as J
 import qualified Data.Aeson.TH     as J
 
+import           Data.Text         (Text)
+
 import           Lib
 
 
@@ -17,10 +19,13 @@ data SearchRequest
 $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchRequest)
 
 newtype SearchResponse
-  = SearchResponse { _srpResult :: Corpus }
+  = SearchResponse { _srpResult :: SearchResult }
   deriving (Show, Eq)
 $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchResponse)
 
 processSearch :: SearchRequest -> App SearchResponse
 processSearch (SearchRequest region family) =
   SearchResponse <$> getCorpus region family
+
+getFamilies :: App [Text]
+getFamilies = getFamilyNames

@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: eac97a2070d40a548e43b81655341bfadaf3c9ee92c797a37ac2d813be7571c2
+-- hash: 28a4e1d506dd89f901b65ad46e5d49865a979d750f75c7302a8a748a0c954b88
 
 name:           cormorant
 version:        0.1.0.0
@@ -39,11 +39,13 @@ library
     , http-types
     , lens
     , mtl
+    , postgresql-simple
     , sqlite-simple
     , text
     , time
     , unordered-containers
     , wai
+    , wai-extra
     , wai-middleware-static
     , wreq
   exposed-modules:
@@ -74,11 +76,13 @@ executable cormorant
     , http-types
     , lens
     , mtl
+    , postgresql-simple
     , sqlite-simple
     , text
     , time
     , unordered-containers
     , wai
+    , wai-extra
     , wai-middleware-static
     , wreq
   other-modules:
@@ -102,11 +106,13 @@ test-suite cormorant-test
     , http-types
     , lens
     , mtl
+    , postgresql-simple
     , sqlite-simple
     , text
     , time
     , unordered-containers
     , wai
+    , wai-extra
     , wai-middleware-static
     , wreq
   other-modules:

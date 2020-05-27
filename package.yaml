@@ -24,6 +24,9 @@ dependencies:
 
 # use text for string-like everything
 - text
+# for efficient representation in some cases
+- bytestring
+
 # for our monad stack
 - mtl
 
@@ -33,25 +36,26 @@ dependencies:
 
 # for sqlite database access
 - sqlite-simple
+# moving to postgres
+- postgresql-simple
 
-# for making http requests to 3rd party APIs
+# for making http requests to external APIs
 - wreq
 
-# for parsing and building json request/responses
+# for parsing and building JSON request/responses
 - aeson
 - aeson-casing
 - lens
 
-# for efficient representation in some cases
-- bytestring
+# well who doesn't have to deal with date/time
 - time
 
-# for out http webserver
+# for our http webserver
 - Spock-core
 - http-types
 - wai
 - wai-middleware-static
-#- wai-extra
+- wai-extra
 
 library:
   source-dirs: src
