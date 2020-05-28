@@ -15,7 +15,7 @@ import qualified Network.Wreq           as W
 data FlickrPhotoResponse
   = FlickrPhotoResponse
   { _fprUrlM   :: !Text
-  , _fprWidthM :: !Text
+  , _fprWidthM :: !Int
   , _fprOwner  :: !Text
   } deriving (Show, Eq)
 
@@ -35,17 +35,17 @@ instance J.FromJSON FlickrResponse where
 
 searchPhotos :: Text -> Text -> IO [Text]
 searchPhotos apiKey term = do
-  --liftIO $ print $ "https://api.flickr.com/services/rest/" <> "?method=flickr.photos.search&format=json&api_key=" <> apiKey <> "&text=" <> cn
+  -- | the API to be called:
+  -- "https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&api_key=<apiKey>&text=<name>"
   resp <- liftIO $ W.getWith (opts apiKey) "https://api.flickr.com/services/rest/"
   let res = resp ^. W.responseBody
-  --liftIO $ print $ resp ^. W.responseBody
-  --liftIO $ writeFile "request.log" (BL.unpack res)
-  let photos = J.eitherDecode res
-  case photos of
+  -- liftIO $ putStrLn "=======> FLICKR RESPONSE ===================>>>>>>> "
+  -- liftIO $ print $ resp ^. W.responseBody
+  case J.eitherDecode res of
+    Right photos -> return $ map _fprUrlM $ unFlickrResponse photos
     Left e       -> do
       liftIO $ print $ "parsing failed: " <> e
       return []
-    Right photos -> return $ map _fprUrlM $ unFlickrResponse photos
   where
     opts key = W.defaults
                & W.param "method" .~ ["flickr.photos.search"]
@@ -53,5 +53,5 @@ searchPhotos apiKey term = do
                & W.param "nojsoncallback" .~ ["?"]
                & W.param "api_key" .~ [key]
                & W.param "text" .~ [term]
-               & W.param "per_page" .~ ["5"]
+               & W.param "per_page" .~ ["3"]
                & W.param "extras" .~ ["url_sq,url_t,url_s,url_q,url_m,url_n,url_z,url_c,url_l,url_o"]

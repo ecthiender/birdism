@@ -34,9 +34,7 @@ dependencies:
 - hashable
 - unordered-containers
 
-# for sqlite database access
-- sqlite-simple
-# moving to postgres
+# for database access
 - postgresql-simple
 
 # for making http requests to external APIs
@@ -56,6 +54,12 @@ dependencies:
 - wai
 - wai-middleware-static
 - wai-extra
+
+# async concurrency
+- async
+
+# for splitting large requests in batches
+- split
 
 library:
   source-dirs: src

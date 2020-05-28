@@ -5,10 +5,7 @@ module Api where
 import qualified Data.Aeson.Casing as J
 import qualified Data.Aeson.TH     as J
 
-import           Data.Text         (Text)
-
 import           Lib
-
 
 data SearchRequest
   = SearchRequest
@@ -27,5 +24,8 @@ processSearch :: SearchRequest -> App SearchResponse
 processSearch (SearchRequest region family) =
   SearchResponse <$> getCorpus region family
 
-getFamilies :: App [Text]
+getFamilies :: App FamilyNames
 getFamilies = getFamilyNames
+
+getRegions :: App RegionNames
+getRegions = getRegionNames

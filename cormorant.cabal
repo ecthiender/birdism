@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 28a4e1d506dd89f901b65ad46e5d49865a979d750f75c7302a8a748a0c954b88
+-- hash: 9255e0e543473406ab7a7d7568b424d8f0fc4c8036ea203ed696fa51598744a4
 
 name:           cormorant
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       Spock-core
     , aeson
     , aeson-casing
+    , async
     , base >=4.7 && <5
     , bytestring
     , hashable
@@ -40,7 +41,7 @@ library
     , lens
     , mtl
     , postgresql-simple
-    , sqlite-simple
+    , split
     , text
     , time
     , unordered-containers
@@ -56,6 +57,7 @@ library
       Lib
       Server
       Types
+      Worker.PopulateRegion
   other-modules:
       Paths_cormorant
   default-language: Haskell2010
@@ -69,6 +71,7 @@ executable cormorant
       Spock-core
     , aeson
     , aeson-casing
+    , async
     , base >=4.7 && <5
     , bytestring
     , cormorant
@@ -77,7 +80,7 @@ executable cormorant
     , lens
     , mtl
     , postgresql-simple
-    , sqlite-simple
+    , split
     , text
     , time
     , unordered-containers
@@ -99,6 +102,7 @@ test-suite cormorant-test
       Spock-core
     , aeson
     , aeson-casing
+    , async
     , base >=4.7 && <5
     , bytestring
     , cormorant
@@ -107,7 +111,7 @@ test-suite cormorant-test
     , lens
     , mtl
     , postgresql-simple
-    , sqlite-simple
+    , split
     , text
     , time
     , unordered-containers

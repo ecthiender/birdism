@@ -15,3 +15,8 @@ CREATE TABLE IF NOT EXISTS taxonomy (
   extinct BOOLEAN,
   extinct_year INTEGER
 );
+
+CREATE TABLE IF NOT EXISTS region (
+  region_code TEXT,
+  region_name TEXT
+);

@@ -10,8 +10,11 @@ module Lib
   , SearchResult
   , CommonName
   , ImgUrl
+  , FamilyNames
+  , RegionNames
   , getImageUrls
   , getFamilyNames
+  , getRegionNames
   , App
   ) where
 
@@ -21,14 +24,14 @@ import           Control.Monad.Reader       (MonadReader, ReaderT, asks)
 import           Data.Maybe                 (fromMaybe)
 import           Data.Text                  (Text)
 
+import qualified Control.Concurrent.Async   as Async
 import qualified Data.Aeson                 as J
 import qualified Data.HashMap.Strict        as Map
 import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
-import qualified Database.SQLite.Simple     as Db
 
 import           Config
-import           Ebird.Region               (ChecklistObservation (..), SubRegion (..),
+import           Ebird.Region               (ChecklistObservation (..), RRegion (..),
                                              SubRegions (..), getSubRegions, searchCheckLists)
 import           Flickr.Photos              (searchPhotos)
 import           Types
@@ -89,13 +92,19 @@ getCorpus region family = do
 
 getRegionCode :: MonadApp m => Region -> m RegionCode
 getRegionCode (Region region) = do
-  subregions <- getSubRegions
-  let isRegion x = T.toLower region == T.toLower (_srName x)
-  let narrRegions = filter isRegion $ unSubRegions subregions
-  --liftIO $ print narrRegions
-  case narrRegions of
+  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
+  let q = "SELECT region_code FROM region WHERE region_name = ?"
+  res <- liftIO $ PG.query conn q (PG.Only region)
+  case res of
     []      -> throwError $ AESearchError $ "could not find region '" <> region <> "'"
-    (reg:_) -> return $ _srCode reg
+    (reg:_) -> return $ (RegionCode . PG.fromOnly) reg
+  -- subregions <- getSubRegions
+  -- let filtered = filter isRegion $ unSubRegions subregions
+  --     isRegion x = T.toLower region == T.toLower (_rName x)
+  -- --liftIO $ print narrRegions
+  -- case filtered of
+  --   []      -> throwError $ AESearchError $ "could not find region '" <> region <> "'"
+  --   (reg:_) -> return $ _rCode reg
 
 -- | Given a 'RegionCode'
 getChecklist :: MonadApp m => RegionCode -> Family -> m Checklist
@@ -110,40 +119,60 @@ getChecklist rc family = do
            Nothing Nothing (uFamily family)
 
 
-newtype DbRes = DbRes Text
-
-instance Db.FromRow DbRes where
-  fromRow = DbRes <$> Db.field
-
 -- | Given a 'Family' name, fetch a list of species belonging to that family. This is fetched from
 -- our database, which contains the entire taxonomy for now
 getSpecies :: MonadApp m => Family -> m [SpeciesCode]
 getSpecies (Family family) = do
-  conn <- liftIO $ Db.open "../ws/bird.db"
-  let q = "select sp_code from taxonomy_db where lower(family_common_name) "
-          <> "like :family"
-      _family = "%" <> family <> "%"
-  res <- liftIO $ Db.queryNamed conn q [":family" Db.:= T.toLower _family]
-  return $ map (\(DbRes r) -> SpeciesCode r) res
+  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
+  let q = "SELECT species_code FROM taxonomy WHERE family_common_name = ?"
+  res <- liftIO $ PG.query conn q (PG.Only family)
+  return $ (SpeciesCode . PG.fromOnly) <$> res
 
 -- | Given a list of 'Bird's, get the final search result, by combining the common names and a list
 -- of image URLs into a hashmap
 getImages :: MonadApp m => [Bird] -> m SearchResult
 getImages birds = do
   let commonNames = map bComName birds
-  urls <- mapM (getImageUrls . bComName) birds
+  urls <- getImageUrls birds
   return $ Map.fromList $ zip commonNames urls
 
--- | Given a 'CommonName' fetch a list of image urls from flickr
-getImageUrls :: MonadApp m => CommonName -> m [ImgUrl]
-getImageUrls (CommonName cn) = do
+-- | Uses 'Async' to concurrently and asynchronously get images from 'searchPhotos' service
+getImageUrls :: MonadApp m => [Bird] -> m [[ImgUrl]]
+getImageUrls birds = do
   apiKey <- asks $ fcKey . acFlickr
-  liftIO $ searchPhotos apiKey cn
+  liftIO $ Async.forConcurrently birds $
+    searchPhotos apiKey . (uCommonName . bComName)
 
-getFamilyNames :: MonadApp m => m [Text]
+------------ list of bird families of the world ------------------
+type FamilyNames = Map.HashMap Text Text
+
+getFamilyNamesQuery :: PG.Query
+getFamilyNamesQuery =
+  "SELECT DISTINCT family_scientific_name, family_common_name FROM taxonomy"
+
+getFamilyNames :: MonadApp m => m FamilyNames
 getFamilyNames = do
   conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
-  res <- liftIO $ PG.query_ conn "select distinct(family_common_name) from taxonomy"
-  let familyCommonNames = fmap (fromMaybe "" . PG.fromOnly) res
-  liftIO $ putStrLn $ ">>> Total no of families found: " <> show (length familyCommonNames)
+  res <- liftIO $ PG.query_ conn getFamilyNamesQuery
+  let familyCommonNames = Map.fromList $
+                          filter (\(x,y) -> x /= "" && y /= "") $
+                          map (\(x,y) -> (fromMaybe "" x, fromMaybe "" y)) res
+  liftIO $ PG.close conn
   return familyCommonNames
+
+----------------- list of regions ---------------
+type RegionNames = Map.HashMap Text Text
+
+getRegionNamesQuery :: PG.Query
+getRegionNamesQuery =
+  "SELECT DISTINCT region_code, region_name FROM region"
+
+getRegionNames :: MonadApp m => m RegionNames
+getRegionNames = do
+  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
+  res <- liftIO $ PG.query_ conn getRegionNamesQuery
+  let regionNames = Map.fromList $
+                    filter (\(x,y) -> x /= "" && y /= "") $
+                    map (\(x,y) -> (fromMaybe "" x, fromMaybe "" y)) res
+  liftIO $ PG.close conn
+  return regionNames
