@@ -16,19 +16,12 @@ module Lib
   , getFamilyNames
   , getRegionNames
   , getSpeciesList
-  , App
   ) where
 
-import           Control.Monad.Except       (ExceptT, MonadError, throwError)
-import           Control.Monad.IO.Class     (MonadIO, liftIO)
-import           Control.Monad.Reader       (MonadReader, ReaderT, asks)
-import           Data.Maybe                 (fromMaybe)
-import           Data.Text                  (Text)
+import           Common
 
 import qualified Control.Concurrent.Async   as Async
-import qualified Data.Aeson                 as J
 import qualified Data.HashMap.Strict        as Map
--- import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
 
 import           Config
@@ -43,29 +36,9 @@ type ImgUrl = Text
 -- (images of birds) for the end user to study
 type SearchResult = Map.HashMap CommonName [ImgUrl]
 
-data AppError
-  = AESearchError !Text
-  | AEDbError !Text
-  deriving (Show)
-
-instance J.ToJSON AppError where
-  toJSON a = case a of
-    AESearchError e -> encodeErr "search-error" e
-    AEDbError e     -> encodeErr "db-error" e
-
-encodeErr :: Text -> Text -> J.Value
-encodeErr code e =
-  J.object [ "code" J..= code
-           , "error" J..= e
-           ]
-
--- Our own monad!
-type App = ReaderT AppCtx (ExceptT AppError IO)
-
--- type alias our quite-used constriaints. we want IO capability and Reader of our AppCtx
-type MonadApp m = (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
-
-getSpeciesList :: MonadApp m => Region -> Family -> m [Bird]
+getSpeciesList
+  :: (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
+  => Region -> Family -> m [Bird]
 getSpeciesList region family = do
   allSpecies <- getSpecies family
   debug "ALL SPECIES" allSpecies
@@ -79,12 +52,14 @@ getSpeciesList region family = do
   debug "MATCHED SPECIES" matchedSpecies
   return matchedSpecies
 
-getCorpus :: MonadApp m => Region -> Family -> m SearchResult
+getCorpus
+  :: (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
+  => Region -> Family -> m SearchResult
 getCorpus region family = do
   allSpecies <- getSpecies family
   debug "ALL SPECIES" allSpecies
   liftIO $ print $ length allSpecies
-  regcode    <- getRegionCode region
+  regcode  <- getRegionCode region
   debug "REGION CODE" regcode
   checklist  <- getChecklist regcode family
   debug "CHECKLIST" (map bSpCode $ cBirds checklist)
@@ -103,7 +78,9 @@ debug banner matter = do
   liftIO $ putStrLn "<<<<<===============================>>>>>>>>"
 
 
-getRegionCode :: MonadApp m => Region -> m RegionCode
+getRegionCode
+  :: (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
+  => Region -> m RegionCode
 getRegionCode (Region region) = do
   conn <- asks axDbConn
   let q = "SELECT region_code FROM region WHERE region_name = ?"
@@ -112,9 +89,8 @@ getRegionCode (Region region) = do
     []      -> throwError $ AESearchError $ "could not find region '" <> region <> "'"
     (reg:_) -> return $ (RegionCode . PG.fromOnly) reg
 
-
 -- | Given a 'RegionCode'
-getChecklist :: MonadApp m => RegionCode -> Family -> m Checklist
+getChecklist :: (MonadIO m, MonadReader AppCtx m) => RegionCode -> Family -> m Checklist
 getChecklist rc family = do
   checklists <- searchCheckLists rc
   --liftIO $ print checklists
@@ -128,7 +104,7 @@ getChecklist rc family = do
 
 -- | Given a 'Family' name, fetch a list of species belonging to that family. This is fetched from
 -- our database, which contains the entire taxonomy for now
-getSpecies :: MonadApp m => Family -> m [SpeciesCode]
+getSpecies :: (MonadIO m, MonadReader AppCtx m) => Family -> m [SpeciesCode]
 getSpecies (Family family) = do
   conn <- asks axDbConn
   let q = "SELECT species_code FROM taxonomy WHERE family_common_name = ?"
@@ -137,14 +113,14 @@ getSpecies (Family family) = do
 
 -- | Given a list of 'Bird's, get the final search result, by combining the common names and a list
 -- of image URLs into a hashmap
-getImages :: MonadApp m => [Bird] -> m SearchResult
+getImages :: (MonadIO m, MonadReader AppCtx m) => [Bird] -> m SearchResult
 getImages birds = do
   let commonNames = map bComName birds
   urls <- getImageUrls birds
   return $ Map.fromList $ zip commonNames urls
 
 -- | Uses 'Async' to concurrently and asynchronously get images from 'searchPhotos' service
-getImageUrls :: MonadApp m => [Bird] -> m [[ImgUrl]]
+getImageUrls ::(MonadIO m, MonadReader AppCtx m) => [Bird] -> m [[ImgUrl]]
 getImageUrls birds = do
   apiKey <- asks $ fcKey . axFlickrConf
   liftIO $ Async.forConcurrently birds $
@@ -157,7 +133,7 @@ getFamilyNamesQuery :: PG.Query
 getFamilyNamesQuery =
   "SELECT DISTINCT family_scientific_name, family_common_name FROM taxonomy"
 
-getFamilyNames :: MonadApp m => m FamilyNames
+getFamilyNames :: (MonadIO m, MonadReader AppCtx m) => m FamilyNames
 getFamilyNames = do
   conn <- asks axDbConn
   res <- liftIO $ PG.query_ conn getFamilyNamesQuery
@@ -173,7 +149,7 @@ getRegionNamesQuery :: PG.Query
 getRegionNamesQuery =
   "SELECT DISTINCT region_code, region_name FROM region"
 
-getRegionNames :: MonadApp m => m RegionNames
+getRegionNames :: (MonadIO m, MonadReader AppCtx m) => m RegionNames
 getRegionNames = do
   conn <- asks axDbConn
   res <- liftIO $ PG.query_ conn getRegionNamesQuery

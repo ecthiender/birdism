@@ -1,8 +1,11 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Config
   ( AppConfig (..)
   , AppCtx (..)
+  , AppError (..)
   , EBirdConf (..)
   , FlickrConf (..)
   , mkConfig
@@ -10,10 +13,7 @@ module Config
   , initialiseAppCtx
   ) where
 
-import           Control.Monad.IO.Class     (MonadIO, liftIO)
-import           Data.Bifunctor             (first)
-import           Data.Maybe                 (fromMaybe)
-import           Data.Text                  (Text)
+import           Common
 import           System.Environment         (lookupEnv)
 
 import qualified Data.Aeson                 as J
@@ -64,18 +64,40 @@ data AppCtx
   , axFlickrConf :: !FlickrConf
   }
 
+data AppError
+  = AESearchError !Text
+  | AEDbError !Text
+  | AEConfigError !Text
+  deriving (Show)
+
+instance J.ToJSON AppError where
+  toJSON a = case a of
+    AESearchError e -> encodeErr "search-error" e
+    AEDbError e     -> encodeErr "db-error" e
+    AEConfigError e -> encodeErr "config-error" e
+
+-- -- Our own monad!
+-- type App = ReaderT AppCtx (ExceptT AppError IO)
+
+encodeErr :: Text -> Text -> J.Value
+encodeErr code e =
+  J.object [ "code" J..= code
+           , "error" J..= e
+           ]
+
 mkConfig :: Text -> Text -> Text -> Text -> AppConfig
 mkConfig dbUrl ebToken fKey fSecret =
   AppConfig dbUrl (EBirdConf ebToken) (FlickrConf fKey fSecret)
 
-readConfig :: MonadIO m => m (Either Text AppConfig)
+readConfig :: (MonadIO m, MonadError AppError m) => m AppConfig
 readConfig = do
   env <- liftIO $ lookupEnv defaultConfigFileEnv
   let filepath = fromMaybe defaultConfigFilepath env
   -- its OK to fail at runtime for now. later we can use 'try' to catch exceptions from this
   configFile <- liftIO $ B.readFile filepath
-  return $ first (T.pack . ("FATAL ERROR: error parsing config file: " ++)) $
-    J.eitherDecodeStrict configFile
+  case J.eitherDecodeStrict configFile of
+    Left e  -> throwError $ AEConfigError (T.pack $ "FATAL ERROR: error parsing config file: " ++ e)
+    Right c -> return c
 
 initialiseAppCtx :: MonadIO m => AppConfig -> m AppCtx
 initialiseAppCtx (AppConfig dbUrl ebird flickr) = do
