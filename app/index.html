@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <title> Bird ID helper </title>
+    <meta charset="utf-8">
+    <meta name="author" content="Anon Ray">
+    <meta name="description" content="Search for a particular family of birds in a particular location">
+
+    <link rel="stylesheet" href="static/bootstrap.min.css">
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" -->
+          <!-- integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" -->
+          <!-- crossorigin="anonymous"> -->
+
+    <style>
+     .autocomplete-form {
+       position: relative;
+       /* left: 5%; */
+       border: 1px solid #aaa;
+       box-shadow: 1px 1px 1px #ccc;
+       padding: 3px;
+       margin-top: 2px;
+     }
+     .autocomplete-form .item {
+       padding: 2px;
+       margin: 1px;
+       border-bottom: 1px solid #eee;
+       cursor: pointer;
+     }
+    </style>
+  </head>
+  <body>
+    <div class="jumbotron">
+      <h1 class="display-4"> Bird ID helper </h1>
+      <p class="lead">
+        Search for a particular family of birds in a particular location.
+        For example: "Flycatchers in Bangalore", "Babblers in Udupi".
+      </p>
+      <p class="small"> * Currently, this works only on birds available in the Indian subcontinent. </p>
+    </div>
+    <div id="app" class="container"></div>
+    <!--
+    <footer class="fixed-bottom">
+      <hr>
+      <span class="small col-md-6 auto-mx">This app is powered by ebird API and Flickr API. </span>
+    </footer>
+    -->
+    <script src="https://unpkg.com/mithril/mithril.js"></script>
+    <script src="static/main.js"></script>
+    <script>
+     window.onload = () => {
+       m.mount(document.getElementById('app'), App);
+     };
+    </script>
+  </body>
+</html>

@@ -1,11 +1,9 @@
-# Birdism
+# Bird ID Helper
 
-Portal for helping bird identification and much more. This application helps in narrowing down
-identification of a bird. 
-
-Often is the case when you have identified the family of the bird, but is unable to conclusively
-identify the exact species. In that case, you frantically search for different species of that
-family and looking at their photographs.
+This application helps in narrowing down identification of a bird. Often is the
+case when you have identified the family of the bird, but is unable to
+conclusively identify the exact species. In that case, you frantically search
+for different species of that family and looking at their photographs.
 
 This application simply does it for you!
 
@@ -20,9 +18,7 @@ of observation. Then it takes those common species name, and does a Flickr
 search for photos, and displays them to you!
 
 # Development
-The backend is in Haskell (code resides in the `server` directory).
-
-The frontend is planned in HyperApp. Right now its implemented in mithril.js (code resides in the `app` directory).
+The backend is in Haskell. The frontend is planned in HyperApp.
 
 # License
 BSD3 license. See LICENSE file.
