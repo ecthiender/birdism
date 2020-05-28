@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Worker.PopulateRegion where
@@ -20,32 +21,32 @@ import           Types
 
 populateRegion :: AppConfig -> IO ()
 populateRegion config = do
-  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
-  truncateRegionTable conn
-  countries <- runReaderT getCountries config
-  asyncHandle <- Async.async $ getSubnats1Async conn countries
-  insertRegions conn countries
+  ctx@AppCtx{..} <- initialiseAppCtx config
+  truncateRegionTable axDbConn
+  countries <- runReaderT getCountries ctx
+  asyncHandle <- Async.async $ getSubnats1Async ctx countries
+  insertRegions axDbConn countries
   subnats1 <- Async.wait asyncHandle
   liftIO $ putStrLn "[DEBUG] inserted countries and subnational1s. cooling off for 10 secs before getting subnational2s"
   threadDelay (1000 * 1000 * 10)
   let batchedSubnats1 = chunksOf 10 subnats1
   forM_ batchedSubnats1 $ \subnats1Batch -> do
     liftIO $ putStrLn "[DEBUG] running one batch of subnational1s"
-    Async.mapConcurrently_ (getSubnats2Async conn) subnats1Batch
+    Async.mapConcurrently_ (getSubnats2Async ctx) subnats1Batch
     liftIO $ putStrLn "[DEBUG] inserted one subnational2s. cooling off for 10 secs.."
     threadDelay (1000 * 1000 * 10)
   where
-    getSubnats1Async conn countries = do
+    getSubnats1Async ctx countries = do
       Async.forConcurrently countries $ \country -> do
         putStrLn $ "[DEBUG] getting subnational-1 region of: " <> T.unpack (uRegionCode $ _rCode country)
-        subnats1 <- runReaderT (getSubnationa1Regions country) config
-        insertRegions conn subnats1
+        subnats1 <- runReaderT (getSubnationa1Regions country) ctx
+        insertRegions (axDbConn ctx) subnats1
         return subnats1
 
-    getSubnats2Async conn subnats1 = do
+    getSubnats2Async ctx subnats1 = do
       Async.forConcurrently subnats1 $ \subnat1 -> do
-        subnats2 <- runReaderT (getSubnationa2Regions subnat1) config
-        insertRegions conn subnats2
+        subnats2 <- runReaderT (getSubnationa2Regions subnat1) ctx
+        insertRegions (axDbConn ctx) subnats2
 
 truncateRegionTable :: PG.Connection -> IO ()
 truncateRegionTable conn = do

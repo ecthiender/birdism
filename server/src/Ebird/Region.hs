@@ -1,9 +1,9 @@
-{-# LANGUAGE DeriveAnyClass             #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+-- {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 
 module Ebird.Region where
@@ -74,17 +74,17 @@ subnational2ListUrl subnat1 =
   "https://ebird.org/ws2.0/ref/region/list/subnational2/" <> T.unpack subnat1 <> ".json"
 
 
-getCountries :: (MonadReader AppConfig m, MonadIO m) => m [RRegion Country]
+getCountries :: (MonadReader AppCtx m, MonadIO m) => m [RRegion Country]
 getCountries = ebirdApiGetService countriesListUrl
 
 getSubnationa1Regions
-  :: (MonadReader AppConfig m, MonadIO m)
+  :: (MonadReader AppCtx m, MonadIO m)
   => RRegion Country -> m [RRegion Subnational1]
 getSubnationa1Regions country =
   ebirdApiGetService (subnational1ListUrl $ uRegionCode $ _rCode country)
 
 getSubnationa2Regions
-  :: (MonadReader AppConfig m, MonadIO m)
+  :: (MonadReader AppCtx m, MonadIO m)
   => RRegion Subnational1 -> m [RRegion Subnational2]
 getSubnationa2Regions subnat1 =
   ebirdApiGetService (subnational2ListUrl $ uRegionCode $ _rCode subnat1)
@@ -92,13 +92,13 @@ getSubnationa2Regions subnat1 =
 subregionListUrl :: String
 subregionListUrl = "https://ebird.org/ws2.0/ref/region/list/subnational2/IN.json"
 
-getSubRegions :: (MonadReader AppConfig m, MonadIO m) => m SubRegions
+getSubRegions :: (MonadReader AppCtx m, MonadIO m) => m SubRegions
 getSubRegions = do
   ebirdApiGetService subregionListUrl
 
-ebirdApiGetService :: (MonadReader AppConfig m, MonadIO m, J.FromJSON a, Monoid a) => String -> m a
+ebirdApiGetService :: (MonadReader AppCtx m, MonadIO m, J.FromJSON a, Monoid a) => String -> m a
 ebirdApiGetService url = do
-  token <- asks $ ebcToken . acEbird
+  token <- asks $ ebcToken . axEbirdConf
   resp  <- liftIO $ W.getWith (opts token) url
   case J.eitherDecode (resp ^. W.responseBody) of
     Left e       -> do
@@ -123,10 +123,10 @@ searchCheckListUrl :: Text -> String
 searchCheckListUrl reg = "https://ebird.org/ws2.0/data/obs/"
                          <> T.unpack reg <> "/recent?back=30"
 searchCheckLists
-  :: (MonadReader AppConfig m, MonadIO m)
+  :: (MonadReader AppCtx m, MonadIO m)
   => RegionCode -> m [ChecklistObservation]
 searchCheckLists (RegionCode region) = do
-  token <- asks $ ebcToken . acEbird
+  token <- asks $ ebcToken . axEbirdConf
   resp  <- liftIO $ W.getWith (opts token) (searchCheckListUrl region)
   case J.eitherDecode (resp ^. W.responseBody) of
     Left e -> do

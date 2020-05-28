@@ -18,8 +18,8 @@ import           Config
 import           Lib                                  (App)
 
 
-httpApp :: AppConfig -> IO Wai.Middleware
-httpApp config = spockT id $ do
+httpApp :: MonadIO m => AppCtx -> m Wai.Middleware
+httpApp config = liftIO $ spockT id $ do
   middleware $ logStdoutDev
   middleware $ staticPolicy (addBase "../app/")
 
@@ -36,13 +36,13 @@ httpApp config = spockT id $ do
   post "api/v1/search" $ httpPostHandler config processSearch
 
 
-httpGetHandler :: J.ToJSON a => AppConfig -> App a -> ActionCtxT () IO ()
+httpGetHandler :: J.ToJSON a => AppCtx -> App a -> ActionCtxT () IO ()
 httpGetHandler config service = do
   handleResult =<< liftIO (runExceptT $ runReaderT service config)
 
 httpPostHandler
   :: (J.FromJSON a, J.ToJSON b)
-  => AppConfig -> (a -> App b) -> ActionCtxT () IO ()
+  => AppCtx -> (a -> App b) -> ActionCtxT () IO ()
 httpPostHandler config service = do
   req <- jsonBody'
   handleResult =<< liftIO (runExceptT $ runReaderT (service req) config)

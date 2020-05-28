@@ -28,12 +28,11 @@ import           Data.Text                  (Text)
 import qualified Control.Concurrent.Async   as Async
 import qualified Data.Aeson                 as J
 import qualified Data.HashMap.Strict        as Map
-import qualified Data.Text                  as T
+-- import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
 
 import           Config
-import           Ebird.Region               (ChecklistObservation (..), RRegion (..),
-                                             SubRegions (..), getSubRegions, searchCheckLists)
+import           Ebird.Region               (ChecklistObservation (..), searchCheckLists)
 import           Flickr.Photos              (searchPhotos)
 import           Types
 
@@ -61,10 +60,10 @@ encodeErr code e =
            ]
 
 -- Our own monad!
-type App = ReaderT AppConfig (ExceptT AppError IO)
+type App = ReaderT AppCtx (ExceptT AppError IO)
 
--- type alias our quite-used constriaints. we want IO capability and Reader of our AppConfig
-type MonadApp m = (MonadIO m, MonadReader AppConfig m, MonadError AppError m)
+-- type alias our quite-used constriaints. we want IO capability and Reader of our AppCtx
+type MonadApp m = (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
 
 getSpeciesList :: MonadApp m => Region -> Family -> m [Bird]
 getSpeciesList region family = do
@@ -106,7 +105,7 @@ debug banner matter = do
 
 getRegionCode :: MonadApp m => Region -> m RegionCode
 getRegionCode (Region region) = do
-  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
+  conn <- asks axDbConn
   let q = "SELECT region_code FROM region WHERE region_name = ?"
   res <- liftIO $ PG.query conn q (PG.Only region)
   case res of
@@ -131,7 +130,7 @@ getChecklist rc family = do
 -- our database, which contains the entire taxonomy for now
 getSpecies :: MonadApp m => Family -> m [SpeciesCode]
 getSpecies (Family family) = do
-  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
+  conn <- asks axDbConn
   let q = "SELECT species_code FROM taxonomy WHERE family_common_name = ?"
   res <- liftIO $ PG.query conn q (PG.Only family)
   return $ (SpeciesCode . PG.fromOnly) <$> res
@@ -147,7 +146,7 @@ getImages birds = do
 -- | Uses 'Async' to concurrently and asynchronously get images from 'searchPhotos' service
 getImageUrls :: MonadApp m => [Bird] -> m [[ImgUrl]]
 getImageUrls birds = do
-  apiKey <- asks $ fcKey . acFlickr
+  apiKey <- asks $ fcKey . axFlickrConf
   liftIO $ Async.forConcurrently birds $
     searchPhotos apiKey . (uCommonName . bComName)
 
@@ -160,12 +159,11 @@ getFamilyNamesQuery =
 
 getFamilyNames :: MonadApp m => m FamilyNames
 getFamilyNames = do
-  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
+  conn <- asks axDbConn
   res <- liftIO $ PG.query_ conn getFamilyNamesQuery
   let familyCommonNames = Map.fromList $
                           filter (\(x,y) -> x /= "" && y /= "") $
                           map (\(x,y) -> (fromMaybe "" x, fromMaybe "" y)) res
-  liftIO $ PG.close conn
   return familyCommonNames
 
 ----------------- list of regions ---------------
@@ -177,10 +175,9 @@ getRegionNamesQuery =
 
 getRegionNames :: MonadApp m => m RegionNames
 getRegionNames = do
-  conn <- liftIO $ PG.connectPostgreSQL "postgres://postgres:@localhost:5432/bih"
+  conn <- asks axDbConn
   res <- liftIO $ PG.query_ conn getRegionNamesQuery
   let regionNames = Map.fromList $
                     filter (\(x,y) -> x /= "" && y /= "") $
                     map (\(x,y) -> (fromMaybe "" x, fromMaybe "" y)) res
-  liftIO $ PG.close conn
   return regionNames

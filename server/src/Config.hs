@@ -2,16 +2,33 @@
 
 module Config
   ( AppConfig (..)
+  , AppCtx (..)
   , EBirdConf (..)
   , FlickrConf (..)
-  , mkConf
+  , mkConfig
+  , readConfig
+  , initialiseAppCtx
   ) where
 
-import           Data.Text         (Text)
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
+import           Data.Bifunctor             (first)
+import           Data.Maybe                 (fromMaybe)
+import           Data.Text                  (Text)
+import           System.Environment         (lookupEnv)
 
-import qualified Data.Aeson.Casing as J
-import qualified Data.Aeson.TH     as J
+import qualified Data.Aeson                 as J
+import qualified Data.Aeson.Casing          as J
+import qualified Data.Aeson.TH              as J
+import qualified Data.ByteString            as B
+import qualified Data.Text                  as T
+import qualified Data.Text.Encoding         as T
+import qualified Database.PostgreSQL.Simple as PG
 
+defaultConfigFileEnv :: String
+defaultConfigFileEnv = "BIRDISM_CONFIG_FILE"
+
+defaultConfigFilepath :: FilePath
+defaultConfigFilepath = "./birdism_conf.json"
 
 newtype EBirdConf
   = EBirdConf { ebcToken :: Text }
@@ -27,14 +44,40 @@ data FlickrConf
 
 $(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''FlickrConf)
 
+-- | The configuration required for the app. The database URL and external service API keys
 data AppConfig
   = AppConfig
-  { acEbird  :: !EBirdConf
-  , acFlickr :: !FlickrConf
+  { acDatabaseUrl :: !Text
+  , acEbird       :: !EBirdConf
+  , acFlickr      :: !FlickrConf
   } deriving (Show, Eq)
 
 $(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''AppConfig)
 
-mkConf :: Text -> Text -> Text -> AppConfig
-mkConf ebToken fKey fSecret =
-  AppConfig (EBirdConf ebToken) (FlickrConf fKey fSecret)
+-- | The sort of global, immutable environment available to the entire app via the Reader monad.
+-- Things like various API keys, the database connection, in-memory caches etc.
+data AppCtx
+  = AppCtx
+  { axDbConn     :: !PG.Connection
+  -- ^ database connection. TODO: change it to a pool
+  , axEbirdConf  :: !EBirdConf
+  , axFlickrConf :: !FlickrConf
+  }
+
+mkConfig :: Text -> Text -> Text -> Text -> AppConfig
+mkConfig dbUrl ebToken fKey fSecret =
+  AppConfig dbUrl (EBirdConf ebToken) (FlickrConf fKey fSecret)
+
+readConfig :: MonadIO m => m (Either Text AppConfig)
+readConfig = do
+  env <- liftIO $ lookupEnv defaultConfigFileEnv
+  let filepath = fromMaybe defaultConfigFilepath env
+  -- its OK to fail at runtime for now. later we can use 'try' to catch exceptions from this
+  configFile <- liftIO $ B.readFile filepath
+  return $ first (T.pack . ("FATAL ERROR: error parsing config file: " ++)) $
+    J.eitherDecodeStrict configFile
+
+initialiseAppCtx :: MonadIO m => AppConfig -> m AppCtx
+initialiseAppCtx (AppConfig dbUrl ebird flickr) = do
+  conn <- liftIO $ PG.connectPostgreSQL (T.encodeUtf8 dbUrl)
+  return $ AppCtx conn ebird flickr
