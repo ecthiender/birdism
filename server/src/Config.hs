@@ -30,6 +30,9 @@ defaultConfigFileEnv = "BIRDISM_CONFIG_FILE"
 defaultConfigFilepath :: FilePath
 defaultConfigFilepath = "./birdism_conf.json"
 
+defaultServerPort :: Int
+defaultServerPort = 8888
+
 newtype EBirdConf
   = EBirdConf { ebcToken :: Text }
   deriving (Show, Eq)
@@ -48,6 +51,7 @@ $(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''FlickrConf)
 data AppConfig
   = AppConfig
   { acDatabaseUrl :: !Text
+  , acServerPort  :: !(Maybe Int)
   , acEbird       :: !EBirdConf
   , acFlickr      :: !FlickrConf
   } deriving (Show, Eq)
@@ -59,6 +63,7 @@ $(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''AppConfig)
 data AppCtx
   = AppCtx
   { axDbConn     :: !PG.Connection
+  , axServerPort :: !Int
   -- ^ database connection. TODO: change it to a pool
   , axEbirdConf  :: !EBirdConf
   , axFlickrConf :: !FlickrConf
@@ -87,7 +92,11 @@ encodeErr code e =
 
 mkConfig :: Text -> Text -> Text -> Text -> AppConfig
 mkConfig dbUrl ebToken fKey fSecret =
-  AppConfig dbUrl (EBirdConf ebToken) (FlickrConf fKey fSecret)
+  AppConfig { acDatabaseUrl = dbUrl
+            , acServerPort = Just defaultServerPort
+            , acEbird = EBirdConf ebToken
+            , acFlickr = FlickrConf fKey fSecret
+            }
 
 readConfig :: (MonadIO m, MonadError AppError m) => m AppConfig
 readConfig = do
@@ -100,6 +109,6 @@ readConfig = do
     Right c -> return c
 
 initialiseAppCtx :: MonadIO m => AppConfig -> m AppCtx
-initialiseAppCtx (AppConfig dbUrl ebird flickr) = do
+initialiseAppCtx (AppConfig dbUrl port ebird flickr) = do
   conn <- liftIO $ PG.connectPostgreSQL (T.encodeUtf8 dbUrl)
-  return $ AppCtx conn ebird flickr
+  return $ AppCtx conn (fromMaybe defaultServerPort port) ebird flickr

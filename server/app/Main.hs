@@ -18,13 +18,14 @@ printExit msg = T.putStrLn msg >> exitFailure
 
 main :: IO ()
 main = do
-  res <- runExceptT $ (readConfig >>= initialiseAppCtx)
+  res <- runExceptT $ readConfig >>= initialiseAppCtx
   case res of
-    Left e    -> err e
-    Right ctx -> liftIO $ runSpock 8888 $ httpApp ctx
-
+    Left e    -> printExit $ getErrMsg e
+    Right ctx -> liftIO $ runSpock (axServerPort ctx) $ httpApp ctx
   where
-    err = \case
-      AESearchError e -> printExit e
-      AEDbError e -> printExit e
-      AEConfigError e -> printExit e
+    getErrMsg err =
+      let msg = case err of
+            AESearchError e -> e
+            AEDbError e     -> e
+            AEConfigError e -> e
+      in msg
