@@ -20,6 +20,12 @@ search for photos, and displays them to you!
 # Development
 The backend is in Haskell. The frontend is planned in HyperApp.
 
+## How to get the taxonomy db                                                                                                  │
+1. Download the taxonomy db from ebird.                                                                                        │
+2. It is a csv file.                                                                                                           │
+3. Import the file into a postgres database.                                                                                     │
+4. Use that postgres database as your data source.
+
 # License
 BSD3 license. See LICENSE file.
 
