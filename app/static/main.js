@@ -51,7 +51,7 @@ class SearchForm {
     })
     .then((result) => {
       console.log('search results', result);
-      app.results = result;
+      app.results = result.result;
       app.searching = false;
     })
     .catch((err) => {
@@ -146,10 +146,10 @@ class BirdPhoto {
     const {photos, species} = vnode.attrs;
     console.log(photos);
     const res = photos.map((photo) => {
-      return m("img", {src: photo[0], height: photo[1], width: photo[1]});
+      return m("img", {src: photo});
     });
     return m("div.card", [
-      //m("img.card-img-top", {src: photos[0][0], height: photos[0][1], width: photos[0][1]}),
+      // m("img.card-img-top", {src: photos[0][0], height: photos[0][1], width: photos[0][1]}),
       m("div.card-body", [
         m("h3.card-title", species),
         ...res
@@ -161,6 +161,7 @@ class BirdPhoto {
 class BirdList {
   view (vnode) {
     const res = vnode.attrs.result;
+    console.log('Redering BirdList', res);
     const species = Object.keys(res);
     if (res.length <= 0) {
       return null;
@@ -185,7 +186,7 @@ class Errors {
 class App {
   constructor () {
     // app state
-    this.results = [];
+    this.results = {};
     this.searching = false;
     this.errors = [];
     this.familyNames = [];

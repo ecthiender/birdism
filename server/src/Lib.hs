@@ -15,6 +15,7 @@ module Lib
   , getImageUrls
   , getFamilyNames
   , getRegionNames
+  , getSpeciesList
   , App
   ) where
 
@@ -65,6 +66,20 @@ type App = ReaderT AppConfig (ExceptT AppError IO)
 -- type alias our quite-used constriaints. we want IO capability and Reader of our AppConfig
 type MonadApp m = (MonadIO m, MonadReader AppConfig m, MonadError AppError m)
 
+getSpeciesList :: MonadApp m => Region -> Family -> m [Bird]
+getSpeciesList region family = do
+  allSpecies <- getSpecies family
+  debug "ALL SPECIES" allSpecies
+  liftIO $ print $ length allSpecies
+  regcode    <- getRegionCode region
+  debug "REGION CODE" regcode
+  checklist  <- getChecklist regcode family
+  debug "CHECKLIST" (map bSpCode $ cBirds checklist)
+  liftIO $ print $ length (cBirds checklist)
+  let matchedSpecies = filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
+  debug "MATCHED SPECIES" matchedSpecies
+  return matchedSpecies
+
 getCorpus :: MonadApp m => Region -> Family -> m SearchResult
 getCorpus region family = do
   allSpecies <- getSpecies family
@@ -80,14 +95,13 @@ getCorpus region family = do
   liftIO $ print $ length matchedSpecies
   getImages matchedSpecies
 
-  where
-    debug banner matter = do
-      liftIO $ putStrLn "===============================>>>>>>>>"
-      liftIO $ putStrLn "===============================>>>>>>>>"
-      liftIO $ putStrLn (banner <> " ....")
-      liftIO $ print matter
-      liftIO $ putStrLn "<<<<<===============================>>>>>>>>"
-      liftIO $ putStrLn "<<<<<===============================>>>>>>>>"
+debug banner matter = do
+  liftIO $ putStrLn "===============================>>>>>>>>"
+  liftIO $ putStrLn "===============================>>>>>>>>"
+  liftIO $ putStrLn (banner <> " ....")
+  liftIO $ print matter
+  liftIO $ putStrLn "<<<<<===============================>>>>>>>>"
+  liftIO $ putStrLn "<<<<<===============================>>>>>>>>"
 
 
 getRegionCode :: MonadApp m => Region -> m RegionCode
@@ -98,13 +112,7 @@ getRegionCode (Region region) = do
   case res of
     []      -> throwError $ AESearchError $ "could not find region '" <> region <> "'"
     (reg:_) -> return $ (RegionCode . PG.fromOnly) reg
-  -- subregions <- getSubRegions
-  -- let filtered = filter isRegion $ unSubRegions subregions
-  --     isRegion x = T.toLower region == T.toLower (_rName x)
-  -- --liftIO $ print narrRegions
-  -- case filtered of
-  --   []      -> throwError $ AESearchError $ "could not find region '" <> region <> "'"
-  --   (reg:_) -> return $ _rCode reg
+
 
 -- | Given a 'RegionCode'
 getChecklist :: MonadApp m => RegionCode -> Family -> m Checklist

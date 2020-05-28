@@ -29,7 +29,7 @@ httpApp config = spockT id $ do
   -- API which returns all bird families of the world (according to ebird taxonomy)
   get "api/v1/families" $ httpGetHandler config getFamilies
 
-  -- API which returns all regions available
+  -- API which returns all available regions
   get "api/v1/regions" $ httpGetHandler config getRegions
 
   -- API which handles the family/region search
