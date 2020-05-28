@@ -1,3 +1,3 @@
-# Changelog for cormorant
+# Changelog for birdism
 
 ## Unreleased changes

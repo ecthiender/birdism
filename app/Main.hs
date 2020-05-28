@@ -20,10 +20,10 @@ import           Server
 
 
 defaultConfigFileEnv :: String
-defaultConfigFileEnv = "CORMORANT_CONFIG_FILE"
+defaultConfigFileEnv = "BIRDISM_CONFIG_FILE"
 
 defaultConfigFilepath :: FilePath
-defaultConfigFilepath = "./cormorant_conf.json"
+defaultConfigFilepath = "./birdism_conf.json"
 
 printExit :: Text -> IO ()
 printExit msg = T.putStrLn msg >> exitFailure
