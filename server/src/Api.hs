@@ -4,6 +4,7 @@
 module Api where
 
 import           Common
+import           Control.Lens
 
 import qualified Data.Aeson.Casing as J
 import qualified Data.Aeson.TH     as J
@@ -25,13 +26,32 @@ newtype SearchResponse
 $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchResponse)
 
 processSearch
-  :: (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasDbConfig r
+     , HasFlickrConf r
+     , HasEBirdConf r
+     , MonadError e m
+     , AsEbirdError e
+     )
   => SearchRequest -> m SearchResponse
 processSearch (SearchRequest region family) =
   SearchResponse <$> getCorpus region family
 
-getFamilies :: (MonadReader AppCtx m, MonadIO m) => m FamilyNames
-getFamilies = getFamilyNames
+getFamilies
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasAppCtx r
+     )
+  => m FamilyNames
+getFamilies =
+  asks (^. axBirdFamiliesCache)
 
-getRegions :: (MonadReader AppCtx m, MonadIO m) => m RegionNames
-getRegions = getRegionNames
+getRegions
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasAppCtx r
+     )
+  => m RegionNames
+getRegions =
+  asks (^. axRegionsCache)

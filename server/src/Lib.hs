@@ -19,6 +19,7 @@ module Lib
   ) where
 
 import           Common
+import           Control.Lens
 
 import qualified Control.Concurrent.Async   as Async
 import qualified Data.HashMap.Strict        as Map
@@ -37,7 +38,14 @@ type ImgUrl = Text
 type SearchResult = Map.HashMap CommonName [ImgUrl]
 
 getSpeciesList
-  :: (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
+  :: ( MonadIO m
+     , MonadReader r m
+     , MonadError e m
+     , HasDbConfig r
+     , HasEBirdConf r
+     , HasFlickrConf r
+     , AsEbirdError e
+     )
   => Region -> Family -> m [Bird]
 getSpeciesList region family = do
   allSpecies <- getSpecies family
@@ -53,7 +61,15 @@ getSpeciesList region family = do
   return matchedSpecies
 
 getCorpus
-  :: (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
+  :: ( MonadIO m
+     , MonadReader r m
+     , MonadError e m
+     , HasDbConfig r
+     , HasEBirdConf r
+     , HasFlickrConf r
+     -- , HasAppCtx r
+     , AsEbirdError e
+     )
   => Region -> Family -> m SearchResult
 getCorpus region family = do
   allSpecies <- getSpecies family
@@ -79,18 +95,30 @@ debug banner matter = do
 
 
 getRegionCode
-  :: (MonadIO m, MonadReader AppCtx m, MonadError AppError m)
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasDbConfig r
+     , MonadError e m
+     , AsEbirdError e
+     )
   => Region -> m RegionCode
 getRegionCode (Region region) = do
-  conn <- asks axDbConn
+  conn <- asks (^. dbConnection)
   let q = "SELECT region_code FROM region WHERE region_name = ?"
   res <- liftIO $ PG.query conn q (PG.Only region)
   case res of
-    []      -> throwError $ AESearchError $ "could not find region '" <> region <> "'"
+    []      -> throwError $ (_EbirdErrorSearch #) $ "could not find region '" <> region <> "'"
     (reg:_) -> return $ (RegionCode . PG.fromOnly) reg
 
 -- | Given a 'RegionCode'
-getChecklist :: (MonadIO m, MonadReader AppCtx m) => RegionCode -> Family -> m Checklist
+getChecklist
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasEBirdConf r
+     , MonadError e m
+     , AsEbirdError e
+     )
+  => RegionCode -> Family -> m Checklist
 getChecklist rc family = do
   checklists <- searchCheckLists rc
   --liftIO $ print checklists
@@ -104,25 +132,41 @@ getChecklist rc family = do
 
 -- | Given a 'Family' name, fetch a list of species belonging to that family. This is fetched from
 -- our database, which contains the entire taxonomy for now
-getSpecies :: (MonadIO m, MonadReader AppCtx m) => Family -> m [SpeciesCode]
+getSpecies
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasDbConfig r
+     )
+  => Family -> m [SpeciesCode]
 getSpecies (Family family) = do
-  conn <- asks axDbConn
+  r <- ask
+  let conn = r ^. dbConnection
   let q = "SELECT species_code FROM taxonomy WHERE family_common_name = ?"
   res <- liftIO $ PG.query conn q (PG.Only family)
   return $ (SpeciesCode . PG.fromOnly) <$> res
 
 -- | Given a list of 'Bird's, get the final search result, by combining the common names and a list
 -- of image URLs into a hashmap
-getImages :: (MonadIO m, MonadReader AppCtx m) => [Bird] -> m SearchResult
+getImages
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasFlickrConf r
+     )
+  => [Bird] -> m SearchResult
 getImages birds = do
   let commonNames = map bComName birds
   urls <- getImageUrls birds
   return $ Map.fromList $ zip commonNames urls
 
 -- | Uses 'Async' to concurrently and asynchronously get images from 'searchPhotos' service
-getImageUrls ::(MonadIO m, MonadReader AppCtx m) => [Bird] -> m [[ImgUrl]]
+getImageUrls
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasFlickrConf r
+     )
+  => [Bird] -> m [[ImgUrl]]
 getImageUrls birds = do
-  apiKey <- asks $ fcKey . axFlickrConf
+  apiKey <- asks (^. fcKey)
   liftIO $ Async.forConcurrently birds $
     searchPhotos apiKey . (uCommonName . bComName)
 
@@ -133,9 +177,10 @@ getFamilyNamesQuery :: PG.Query
 getFamilyNamesQuery =
   "SELECT DISTINCT family_scientific_name, family_common_name FROM taxonomy"
 
-getFamilyNames :: (MonadIO m, MonadReader AppCtx m) => m FamilyNames
+-- | TODO: handle postgres errors
+getFamilyNames :: (MonadIO m, MonadReader r m, HasDbConfig r) => m FamilyNames
 getFamilyNames = do
-  conn <- asks axDbConn
+  conn <- asks (^. dbConnection)
   res <- liftIO $ PG.query_ conn getFamilyNamesQuery
   let familyCommonNames = Map.fromList $
                           filter (\(x,y) -> x /= "" && y /= "") $
@@ -149,9 +194,14 @@ getRegionNamesQuery :: PG.Query
 getRegionNamesQuery =
   "SELECT DISTINCT region_code, region_name FROM region"
 
-getRegionNames :: (MonadIO m, MonadReader AppCtx m) => m RegionNames
+getRegionNames
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasDbConfig r
+     )
+  => m RegionNames
 getRegionNames = do
-  conn <- asks axDbConn
+  conn <- asks (^. dbConnection)
   res <- liftIO $ PG.query_ conn getRegionNamesQuery
   let regionNames = Map.fromList $
                     filter (\(x,y) -> x /= "" && y /= "") $

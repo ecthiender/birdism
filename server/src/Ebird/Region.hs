@@ -8,18 +8,15 @@
 
 module Ebird.Region where
 
+import           Common
 import           Control.Lens
-import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Control.Monad.Reader   (MonadReader, asks)
-import           Data.Text              (Text)
-import           GHC.Generics           (Generic)
 
-import qualified Data.Aeson             as J
-import qualified Data.Aeson.Casing      as J
-import qualified Data.Aeson.TH          as J
-import qualified Data.Text              as T
-import qualified Data.Text.Encoding     as T
-import qualified Network.Wreq           as W
+import qualified Data.Aeson         as J
+import qualified Data.Aeson.Casing  as J
+import qualified Data.Aeson.TH      as J
+import qualified Data.Text          as T
+import qualified Data.Text.Encoding as T
+import qualified Network.Wreq       as W
 
 import           Config
 import           Types
@@ -74,17 +71,34 @@ subnational2ListUrl subnat1 =
   "https://ebird.org/ws2.0/ref/region/list/subnational2/" <> T.unpack subnat1 <> ".json"
 
 
-getCountries :: (MonadReader AppCtx m, MonadIO m) => m [RRegion Country]
+getCountries
+  :: ( MonadReader r m
+     , HasEBirdConf r
+     , MonadError e m
+     , AsEbirdError e
+     , MonadIO m
+     )
+  => m [RRegion Country]
 getCountries = ebirdApiGetService countriesListUrl
 
 getSubnationa1Regions
-  :: (MonadReader AppCtx m, MonadIO m)
+  :: ( MonadReader r m
+     , HasEBirdConf r
+     , MonadError e m
+     , AsEbirdError e
+     , MonadIO m
+     )
   => RRegion Country -> m [RRegion Subnational1]
 getSubnationa1Regions country =
   ebirdApiGetService (subnational1ListUrl $ uRegionCode $ _rCode country)
 
 getSubnationa2Regions
-  :: (MonadReader AppCtx m, MonadIO m)
+  :: ( MonadReader r m
+     , HasEBirdConf r
+     , MonadError e m
+     , AsEbirdError e
+     , MonadIO m
+     )
   => RRegion Subnational1 -> m [RRegion Subnational2]
 getSubnationa2Regions subnat1 =
   ebirdApiGetService (subnational2ListUrl $ uRegionCode $ _rCode subnat1)
@@ -92,19 +106,36 @@ getSubnationa2Regions subnat1 =
 subregionListUrl :: String
 subregionListUrl = "https://ebird.org/ws2.0/ref/region/list/subnational2/IN.json"
 
-getSubRegions :: (MonadReader AppCtx m, MonadIO m) => m SubRegions
+getSubRegions
+  :: ( MonadReader r m
+     , HasEBirdConf r
+     , MonadIO m
+     , MonadError e m
+     , AsEbirdError e
+     )
+  => m SubRegions
 getSubRegions = do
   ebirdApiGetService subregionListUrl
 
-ebirdApiGetService :: (MonadReader AppCtx m, MonadIO m, J.FromJSON a, Monoid a) => String -> m a
+ebirdApiGetService
+  :: ( MonadReader r m
+     , HasEBirdConf r
+     , MonadError e m
+     , AsEbirdError e
+     , MonadIO m
+     , J.FromJSON a
+     )
+  => String
+  -- ^ the complete URL
+  -> m a
 ebirdApiGetService url = do
-  token <- asks $ ebcToken . axEbirdConf
+  r <- ask
+  let token = r ^. ebcToken
   resp  <- liftIO $ W.getWith (opts token) url
   case J.eitherDecode (resp ^. W.responseBody) of
     Left e       -> do
-      liftIO $ print $ "parsing failed: " <> e
-      return mempty
-    Right r -> return r
+      throwError $ (_EbirdErrorParseResponse #) (T.pack e)
+    Right res -> return res
   where
     opts key = W.defaults
                & W.header "X-eBirdApiToken" .~ [ T.encodeUtf8 key ]
@@ -123,16 +154,22 @@ searchCheckListUrl :: Text -> String
 searchCheckListUrl reg = "https://ebird.org/ws2.0/data/obs/"
                          <> T.unpack reg <> "/recent?back=30"
 searchCheckLists
-  :: (MonadReader AppCtx m, MonadIO m)
+  :: ( MonadReader r m
+     , HasEBirdConf r
+     , MonadError e m
+     , AsEbirdError e
+     , MonadIO m
+     )
   => RegionCode -> m [ChecklistObservation]
 searchCheckLists (RegionCode region) = do
-  token <- asks $ ebcToken . axEbirdConf
-  resp  <- liftIO $ W.getWith (opts token) (searchCheckListUrl region)
-  case J.eitherDecode (resp ^. W.responseBody) of
-    Left e -> do
-      liftIO $ print $ "parsing failed: " <> e
-      return []
-    Right list -> return list
-  where
-    opts key = W.defaults
-               & W.header "X-eBirdApiToken" .~ [ T.encodeUtf8 key ]
+  ebirdApiGetService (searchCheckListUrl region)
+  -- token <- asks $ _ebcToken . _axEbirdConf
+  -- resp  <- liftIO $ W.getWith (opts token) (searchCheckListUrl region)
+  -- case J.eitherDecode (resp ^. W.responseBody) of
+  --   Left e -> do
+  --     liftIO $ print $ "parsing failed: " <> e
+  --     return []
+  --   Right list -> return list
+  -- where
+  --   opts key = W.defaults
+  --              & W.header "X-eBirdApiToken" .~ [ T.encodeUtf8 key ]
