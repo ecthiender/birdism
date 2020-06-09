@@ -1,0 +1,19 @@
+{
+  "name": "Birdism",
+  "description": "Online portal for your birding needs",
+  "keywords": [],
+  "success_url": "/",
+  "website": "https://birdism.herokuapp.com",
+  "repository": "https://github.com/ecthiender/birdism",
+  "formation": {
+    "web": {
+      "quantity": 1
+    }
+  },
+  "stack": "container",
+  "addons": [
+    {
+      "plan": "heroku-postgresql:hobby-dev"
+    }
+  ]
+}
