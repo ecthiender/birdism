@@ -6,7 +6,10 @@ ENV BIRDISM_ENV=production
 #ENV EBIRD_TOKEN
 #ENV FLICKR_KEY
 #ENV FLICKR_SECRET
+ENV SERVER_PORT=$(echo $PORT || 8888)
 
 ENV BIRDISM_CONFIG="{\"database_url\": \"$DATABASE_URL\", \"server_port\": $PORT, \"ebird\": {\"token\": \"$EBIRD_TOKEN\"}, \"flickr\": { \"key\": \"$FLICKR_KEY\", \"secret\": \"$FLICKR_SECRET\"} }"
 
 RUN echo "RUNNING THIS CONFIG: $BIRDISM_CONFIG"
+
+CMD ["echo", "$BIRDISM_CONFIG", "&&", "/birdism/server/birdism"]
