@@ -8,31 +8,34 @@ import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Network.Wai.Middleware.RequestLogger
 import           Network.Wai.Middleware.Static
-import           Web.Spock.Core
 
 import qualified Data.Aeson                           as J
 import qualified Network.HTTP.Types.Status            as HTTP
 import qualified Network.Wai                          as Wai
+import qualified Web.Spock.Core                       as Spock
 
 import           Api
 import           Config
 
 httpApp :: MonadIO m => AppCtx -> m Wai.Middleware
-httpApp config = liftIO $ spockT id $ do
-  middleware $ logStdoutDev
-  middleware $ staticPolicy (addBase "../app/")
+httpApp config = liftIO $ Spock.spockT id $ do
+  Spock.middleware $ logStdoutDev
+  Spock.middleware $ staticPolicy (addBase "../app/")
+
+  -- redirect / to /console
+  Spock.get Spock.root $ Spock.redirect "index.html"
 
   -- simple ping API for status check
-  get "api/ping" $ text "pong"
+  Spock.get "api/ping" $ Spock.text "pong"
 
   -- API which returns all bird families of the world (according to ebird taxonomy)
-  get "api/v1/families" $ httpGetHandler config getFamilies
+  Spock.get "api/v1/families" $ httpGetHandler config getFamilies
 
   -- API which returns all available regions
-  get "api/v1/regions" $ httpGetHandler config getRegions
+  Spock.get "api/v1/regions" $ httpGetHandler config getRegions
 
   -- API which handles the family/region search
-  post "api/v1/search" $ httpPostHandler config processSearch
+  Spock.post "api/v1/search" $ httpPostHandler config processSearch
 
 
 newtype AppM a
@@ -43,26 +46,26 @@ runAppM :: AppM a -> AppCtx -> IO (Either AppError a)
 runAppM app config = runExceptT $ runReaderT (unAppM app) config
 
 
-httpGetHandler :: J.ToJSON a => AppCtx -> AppM a -> ActionCtxT () IO ()
+httpGetHandler :: J.ToJSON a => AppCtx -> AppM a -> Spock.ActionCtxT () IO ()
 httpGetHandler config (AppM service) = do
   handleResult =<< liftIO (runExceptT $ runReaderT service config)
 
 httpPostHandler
   :: (J.FromJSON a, J.ToJSON b)
-  => AppCtx -> (a -> AppM b) -> ActionCtxT () IO ()
+  => AppCtx -> (a -> AppM b) -> Spock.ActionCtxT () IO ()
 httpPostHandler config service = do
-  req <- jsonBody'
+  req <- Spock.jsonBody'
   handleResult =<< liftIO (runExceptT $ runReaderT (unAppM $ service req) config)
 
-handleResult :: (J.ToJSON e, J.ToJSON a) => Either e a -> ActionCtxT ctx IO b
+handleResult :: (J.ToJSON e, J.ToJSON a) => Either e a -> Spock.ActionCtxT ctx IO b
 handleResult = \case
   Left e -> do
-    setStatus HTTP.status400
+    Spock.setStatus HTTP.status400
     setJsonHeader
-    lazyBytes $ J.encode e
+    Spock.lazyBytes $ J.encode e
   Right r -> do
     setJsonHeader
-    lazyBytes $ J.encode r
+    Spock.lazyBytes $ J.encode r
   where
     jsonHeader = ("Content-Type", "application/json")
-    setJsonHeader = uncurry setHeader jsonHeader
+    setJsonHeader = uncurry Spock.setHeader jsonHeader

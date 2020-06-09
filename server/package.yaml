@@ -61,6 +61,9 @@ dependencies:
 # for splitting large requests in batches
 - split
 
+# for extra filesystem functions
+# - extra
+
 library:
   source-dirs: src
 

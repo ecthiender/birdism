@@ -49,15 +49,15 @@ getSpeciesList
   => Region -> Family -> m [Bird]
 getSpeciesList region family = do
   allSpecies <- getSpecies family
-  debug "ALL SPECIES" allSpecies
+  debugTrace (Just "ALL SPECIES") allSpecies
   liftIO $ print $ length allSpecies
   regcode    <- getRegionCode region
-  debug "REGION CODE" regcode
+  debugTrace (Just "REGION CODE") regcode
   checklist  <- getChecklist regcode family
-  debug "CHECKLIST" (map bSpCode $ cBirds checklist)
+  debugTrace (Just "CHECKLIST") (map bSpCode $ cBirds checklist)
   liftIO $ print $ length (cBirds checklist)
   let matchedSpecies = filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
-  debug "MATCHED SPECIES" matchedSpecies
+  debugTrace (Just "MATCHED SPECIES") matchedSpecies
   return matchedSpecies
 
 getCorpus
@@ -73,26 +73,17 @@ getCorpus
   => Region -> Family -> m SearchResult
 getCorpus region family = do
   allSpecies <- getSpecies family
-  debug "ALL SPECIES" allSpecies
+  debugTrace (Just "ALL SPECIES") allSpecies
   liftIO $ print $ length allSpecies
   regcode  <- getRegionCode region
-  debug "REGION CODE" regcode
+  debugTrace (Just "REGION CODE") regcode
   checklist  <- getChecklist regcode family
-  debug "CHECKLIST" (map bSpCode $ cBirds checklist)
+  debugTrace (Just "CHECKLIST") (map bSpCode $ cBirds checklist)
   liftIO $ print $ length (cBirds checklist)
   let matchedSpecies = filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
-  debug "MATCHED SPECIES" matchedSpecies
+  debugTrace (Just "MATCHED SPECIES") matchedSpecies
   liftIO $ print $ length matchedSpecies
   getImages matchedSpecies
-
-debug banner matter = do
-  liftIO $ putStrLn "===============================>>>>>>>>"
-  liftIO $ putStrLn "===============================>>>>>>>>"
-  liftIO $ putStrLn (banner <> " ....")
-  liftIO $ print matter
-  liftIO $ putStrLn "<<<<<===============================>>>>>>>>"
-  liftIO $ putStrLn "<<<<<===============================>>>>>>>>"
-
 
 getRegionCode
   :: ( MonadIO m

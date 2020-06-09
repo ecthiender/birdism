@@ -1,5 +1,5 @@
 FROM debian:bullseye-slim
-WORKDIR /birdism
+WORKDIR /birdism/server
 RUN apt-get -y update \
   && apt-get install -y libpq-dev \
   && apt-get clean \

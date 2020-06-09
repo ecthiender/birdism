@@ -2,6 +2,7 @@
 -- import everytime and they ubiquitous in Haskell code.
 module Common
   ( module M
+  , debugTrace
   )
   where
 
@@ -41,3 +42,7 @@ import           Data.Word                   as M (Word64)
 import           GHC.Generics                as M (Generic)
 import           Prelude                     as M hiding (fail, init, lookup)
 import           Text.Read                   as M (readEither, readMaybe)
+
+debugTrace :: (MonadIO m, Show a) => Maybe String -> a -> m ()
+debugTrace prefix actual =
+  liftIO $ putStrLn $ "[DEBUG] " <> maybe "" (<> ": ") prefix <> show actual
