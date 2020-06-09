@@ -1,0 +1,10 @@
+FROM rayanon/birdism:v0.1.0
+
+ENV BIRDISM_ENV=production
+ENV DATABASE_URL
+ENV PORT
+ENV EBIRD_TOKEN
+ENV FLICKR_KEY
+ENV FLICKR_SECRET
+
+ENV BIRDISM_CONFIG="{\"database_url\": \"$DATABASE_URL\", \"server_port\": $PORT, \"ebird\": {\"token\": \"$EBIRD_TOKEN\"}, \"flickr\": { \"key\": \"$FLICKR_KEY\", \"secret\": \"$FLICKR_SECRET\"} }"
