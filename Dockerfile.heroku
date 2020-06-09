@@ -8,3 +8,5 @@ ENV BIRDISM_ENV=production
 #ENV FLICKR_SECRET
 
 ENV BIRDISM_CONFIG="{\"database_url\": \"$DATABASE_URL\", \"server_port\": $PORT, \"ebird\": {\"token\": \"$EBIRD_TOKEN\"}, \"flickr\": { \"key\": \"$FLICKR_KEY\", \"secret\": \"$FLICKR_SECRET\"} }"
+
+RUN echo "RUNNING THIS CONFIG: $BIRDISM_CONFIG"
