@@ -6,9 +6,6 @@ module Worker.PopulateRegion where
 
 import           Common
 import           Control.Concurrent         (threadDelay)
--- import           Control.Monad              (forM_)
--- import           Control.Monad.IO.Class     (liftIO)
--- import           Control.Monad.Reader       (runReaderT)
 import           Data.List.Split            (chunksOf)
 
 import qualified Control.Concurrent.Async   as Async
@@ -63,8 +60,8 @@ insertRegions conn regions = do
   liftIO $ putStrLn $ "INSERTED. Affected Rows: " <> show res
 
 run :: ReaderT r (ExceptT AppError IO) a -> r -> IO a
-run a cfg = do
-  res <- runExceptT $ runReaderT a cfg
+run trans cfg = do
+  res <- runExceptT $ runReaderT trans cfg
   case res of
     Left err -> error $ "AppError occurred: " <> show err
     Right v  -> return v

@@ -25,16 +25,13 @@ import           System.Environment         (lookupEnv)
 import qualified Data.Aeson                 as J
 import qualified Data.Aeson.Casing          as J
 import qualified Data.Aeson.TH              as J
-import qualified Data.ByteString            as B
+import qualified Data.ByteString.Char8      as B
 import qualified Data.HashMap.Strict        as Map
 import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
 
-defaultConfigFileEnv :: String
-defaultConfigFileEnv = "BIRDISM_CONFIG_FILE"
-
-defaultConfigFilepath :: FilePath
-defaultConfigFilepath = "./birdism_conf.json"
+configEnv :: String
+configEnv = "BIRDISM_CONFIG"
 
 defaultServerPort :: Int
 defaultServerPort = 8888
@@ -174,10 +171,9 @@ mkConfig dbUrl ebToken fKey fSecret =
 
 readConfig :: (MonadIO m, MonadError AppError m) => m AppConfig
 readConfig = do
-  env <- liftIO $ lookupEnv defaultConfigFileEnv
-  let filepath = fromMaybe defaultConfigFilepath env
-  -- its OK to fail at runtime for now. later we can use 'try' to catch exceptions from this
-  configFile <- liftIO $ B.readFile filepath
-  case J.eitherDecodeStrict configFile of
-    Left e  -> throwError $ AEConfigError ("error parsing config file: " <> T.pack e)
-    Right c -> return c
+  env <- liftIO $ lookupEnv configEnv
+  case env of
+    Nothing -> throwError $ AEConfigError $ "env var '" <> T.pack configEnv <> "' not found"
+    Just config -> case J.eitherDecodeStrict (B.pack config) of
+      Left e  -> throwError $ AEConfigError $ "error parsing config file: " <> T.pack e
+      Right c -> return c
