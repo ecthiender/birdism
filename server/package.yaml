@@ -39,6 +39,7 @@ dependencies:
 
 # for making http requests to external APIs
 - wreq
+- http-client # for using the types
 
 # for parsing and building JSON request/responses
 - aeson

@@ -7,16 +7,14 @@
 module Ebird.Region where
 
 import           Common
-import           Control.Lens
 
-import qualified Data.Aeson         as J
-import qualified Data.Aeson.Casing  as J
-import qualified Data.Aeson.TH      as J
-import qualified Data.Text          as T
-import qualified Data.Text.Encoding as T
-import qualified Network.Wreq       as W
+import qualified Data.Aeson        as J
+import qualified Data.Aeson.Casing as J
+import qualified Data.Aeson.TH     as J
+import qualified Data.Text         as T
 
 import           Config
+import           Ebird.Common
 import           Types
 
 data Country = Country
@@ -113,29 +111,6 @@ getSubRegions
   => m SubRegions
 getSubRegions = do
   ebirdApiGetService subregionListUrl
-
-ebirdApiGetService
-  :: ( MonadReader r m
-     , HasEBirdConf r
-     , MonadError e m
-     , AsEbirdError e
-     , MonadIO m
-     , J.FromJSON a
-     )
-  => String
-  -- ^ the complete URL
-  -> m a
-ebirdApiGetService url = do
-  r <- ask
-  let token = r ^. ebcToken
-  resp  <- liftIO $ W.getWith (opts token) url
-  case J.eitherDecode (resp ^. W.responseBody) of
-    Left e    -> throwError $ (_EbirdErrorParseResponse #) (T.pack e)
-    Right res -> return res
-  where
-    opts key = W.defaults
-               & W.header "X-eBirdApiToken" .~ [ T.encodeUtf8 key ]
-
 
 data ChecklistObservation
   = ChecklistObservation

@@ -126,6 +126,7 @@ $(J.deriveToJSON
 data EbirdError
   = EbirdErrorSearch !Text
   | EbirdErrorParseResponse !Text
+  | EbirdErrorUnexpected !Text
   deriving (Show)
 
 makeClassyPrisms ''EbirdError

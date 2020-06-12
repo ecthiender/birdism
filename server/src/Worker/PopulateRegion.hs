@@ -32,8 +32,8 @@ populateRegion config = do
   forM_ batchedSubnats1 $ \subnats1Batch -> do
     putStrLn "[DEBUG] running one batch of subnational1s"
     Async.mapConcurrently_ (getSubnats2Async ctx) subnats1Batch
-    putStrLn "[DEBUG] inserted one subnational2s. cooling off for 10 secs.."
-    threadDelay (1000 * 1000 * 10)
+    putStrLn "[DEBUG] inserted one subnational2s. cooling off for 20 secs.."
+    threadDelay (1000 * 1000 * 20)
   where
     getSubnats1Async ctx countries = do
       Async.forConcurrently countries $ \country -> do
