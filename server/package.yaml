@@ -61,6 +61,7 @@ dependencies:
 # for splitting large requests in batches
 - split
 
+- file-embed
 # for extra filesystem functions
 # - extra
 

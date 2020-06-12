@@ -1,10 +1,8 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
--- {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
-
 
 module Ebird.Region where
 
@@ -20,7 +18,6 @@ import qualified Network.Wreq       as W
 
 import           Config
 import           Types
-
 
 data Country = Country
   deriving (Generic, J.FromJSON, J.ToJSON)
@@ -133,8 +130,7 @@ ebirdApiGetService url = do
   let token = r ^. ebcToken
   resp  <- liftIO $ W.getWith (opts token) url
   case J.eitherDecode (resp ^. W.responseBody) of
-    Left e       -> do
-      throwError $ (_EbirdErrorParseResponse #) (T.pack e)
+    Left e    -> throwError $ (_EbirdErrorParseResponse #) (T.pack e)
     Right res -> return res
   where
     opts key = W.defaults
@@ -163,13 +159,3 @@ searchCheckLists
   => RegionCode -> m [ChecklistObservation]
 searchCheckLists (RegionCode region) = do
   ebirdApiGetService (searchCheckListUrl region)
-  -- token <- asks $ _ebcToken . _axEbirdConf
-  -- resp  <- liftIO $ W.getWith (opts token) (searchCheckListUrl region)
-  -- case J.eitherDecode (resp ^. W.responseBody) of
-  --   Left e -> do
-  --     liftIO $ print $ "parsing failed: " <> e
-  --     return []
-  --   Right list -> return list
-  -- where
-  --   opts key = W.defaults
-  --              & W.header "X-eBirdApiToken" .~ [ T.encodeUtf8 key ]

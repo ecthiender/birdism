@@ -29,3 +29,9 @@ BSD3 license. See LICENSE file.
 
 # Contributing
 Submit an issue or a pull request.
+
+# To deploy
+- Run `make image` to build the actual image. Then run `make push` to publish it.
+- See if you're heroku CLI and all is setup properly
+- Update `Dockerfile.heroku` to adjust the version accordingly
+- Commit and run `git push heroku master`
