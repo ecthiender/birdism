@@ -8,4 +8,4 @@ RUN apt-get -y update \
 ARG project_bin
 COPY ${project_bin} /birdism/server/
 COPY app /birdism/app
-CMD ["/birdism/server/birdism"]
+CMD ["/birdism/server/birdism", "serve"]
