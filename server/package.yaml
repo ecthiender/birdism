@@ -65,6 +65,8 @@ dependencies:
 - file-embed
 # for extra filesystem functions
 # - extra
+- say
+- retry
 
 library:
   source-dirs: src

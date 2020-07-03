@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 
@@ -26,7 +24,9 @@ main = do
     ("serve":_)       -> runServer
     ("seed-taxa":_)   -> seed populateTaxonomy
     ("seed-region":_) -> seed populateRegion
-    _                 -> putStrLn "Invalid command." >> exitFailure
+    ("help":_)        -> printUsage
+    ("--help":_)      -> printUsage
+    _                 -> putStrLn "Invalid command." >> printUsage >> exitFailure
 
 runServer :: IO ()
 runServer = do
@@ -37,11 +37,15 @@ runServer = do
 
 seed :: (AppConfig -> IO ()) -> IO ()
 seed fn = do
-  res <- runExceptT $ readConfig
+  res <- runExceptT readConfig
   case res of
     Left e     -> printExit $ J.encode e
     Right conf -> fn conf
 
+printUsage :: IO ()
+printUsage = do
+  putStrLn "Usage:"
+  putStrLn "birdsim serve|seed-taxa|seed-region"
 
 printExit :: BL.ByteString -> IO ()
 printExit msg = BL.putStrLn msg >> exitFailure

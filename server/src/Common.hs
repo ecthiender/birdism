@@ -3,6 +3,8 @@
 module Common
   ( module M
   , debugTrace
+  , tshow
+  , sleep
   )
   where
 
@@ -43,6 +45,15 @@ import           GHC.Generics                as M (Generic)
 import           Prelude                     as M hiding (fail, init, lookup)
 import           Text.Read                   as M (readEither, readMaybe)
 
+import qualified Control.Concurrent          as Conc
+import qualified Data.Text                   as T
+
 debugTrace :: (MonadIO m, Show a) => Maybe String -> a -> m ()
 debugTrace prefix actual =
   liftIO $ putStrLn $ "[DEBUG] " <> maybe "" (<> ": ") prefix <> show actual
+
+tshow :: Show a => a -> Text
+tshow = T.pack . show
+
+sleep :: MonadIO m => Int -> m ()
+sleep seconds = liftIO $ Conc.threadDelay (1000 * 1000 * seconds)
