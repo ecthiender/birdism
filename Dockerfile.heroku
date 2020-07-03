@@ -3,7 +3,7 @@ FROM rayanon/birdism:v0.1.0
 ENV BIRDISM_ENV=production
 
 RUN true \
-  && echo 'export BIRDISM_CONFIG="{\"database_url\": \"$DATABASE_URL\", \"server_port\": $PORT, \"ebird\": {\"token\": \"$EBIRD_TOKEN\"}, \"flickr\": { \"key\": \"$FLICKR_KEY\", \"secret\": \"$FLICKR_SECRET\"}}" && echo $BIRDISM_CONFIG && /birdism/server/birdism' > /birdism/run.sh \
+  && echo 'export BIRDISM_CONFIG="{\"database_url\": \"$DATABASE_URL\", \"server_port\": $PORT, \"ebird\": {\"token\": \"$EBIRD_TOKEN\"}, \"flickr\": { \"key\": \"$FLICKR_KEY\", \"secret\": \"$FLICKR_SECRET\"}}" && echo $BIRDISM_CONFIG && /birdism/server/birdism serve' > /birdism/run.sh \
 && chmod +x /birdism/run.sh
 
 CMD ["/birdism/run.sh"]
