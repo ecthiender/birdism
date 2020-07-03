@@ -1,7 +1,7 @@
 FROM debian:bullseye-slim
 WORKDIR /birdism/server
 RUN apt-get -y update \
-  && apt-get install -y libpq-dev \
+  && apt-get install -y libpq-dev ca-certificates \
   && apt-get clean \
   && apt-get autoremove \
   && rm -rf /var/lib/apt/lists/*
