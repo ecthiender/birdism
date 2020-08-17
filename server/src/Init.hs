@@ -19,9 +19,10 @@ initialiseAppCtx (AppConfig dbUrl port ebird flickr) = do
   conn <- liftIO $ PG.connectPostgreSQL (T.encodeUtf8 dbUrl)
   let dbConf = DbConfig conn 10 1
   initialiseDatabase conn
+  -- create an in-memory cache of family names and region, as they don't change
   families <- runReaderT getFamilyNames dbConf
-  regions <- runReaderT getRegionNames dbConf
-  return $ AppCtx dbConf (fromMaybe defaultServerPort port) families regions ebird flickr
+  regions  <- runReaderT getRegionNames dbConf
+  return $ AppCtx dbConf (fromMaybe defaultServerPort port) (FamiliesCache families) (RegionsCache regions) ebird flickr
 
 initialiseDatabase :: MonadIO m => PG.Connection -> m ()
 initialiseDatabase conn = do

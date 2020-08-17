@@ -26,9 +26,10 @@ import qualified Data.Aeson                 as J
 import qualified Data.Aeson.Casing          as J
 import qualified Data.Aeson.TH              as J
 import qualified Data.ByteString.Char8      as B
-import qualified Data.HashMap.Strict        as Map
 import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
+
+import           Types
 
 configEnv :: String
 configEnv = "BIRDISM_CONFIG"
@@ -71,8 +72,14 @@ data DbConfig
   , _dbPoolSize   :: !Int
   , _dbStripes    :: !Int
   }
-
 makeClassy ''DbConfig
+
+newtype FamiliesCache = FamiliesCache { unFamiliesCache :: [Family] }
+makeClassy ''FamiliesCache
+
+newtype RegionsCache = RegionsCache { unRegionsCache :: [Region] }
+makeClassy ''RegionsCache
+
 
 -- | The sort of global, immutable environment available to the entire app via the Reader monad.
 -- Things like various API keys, the database connection, in-memory caches etc.
@@ -83,12 +90,12 @@ data AppCtx
 
   , _axServerPort        :: !Int
 
-  , _axBirdFamiliesCache :: !(Map.HashMap Text Text)
+  , _axBirdFamiliesCache :: !FamiliesCache
   -- ^ a global cache of all the bird families. The HTTP API can just read from this and return; it
   -- doesn't need to hit the database. This rarely changes, hence this is totally safe. It prepares
   -- the cache only on startup. If you ever need to bust this cache, just restart the server. ,
 
-  , _axRegionsCache      :: !(Map.HashMap Text Text)
+  , _axRegionsCache      :: !RegionsCache
   -- ^ a global cache of all the regions. The HTTP API can just read from this and return; it
   -- doesn't need to hit the database. This rarely changes, hence this is totally safe. It prepares
   -- the cache only on startup. If you ever need to bust this cache, just restart the server. ,
@@ -108,8 +115,11 @@ instance HasFlickrConf AppCtx where
 instance HasDbConfig AppCtx where
   dbConfig = appCtx . axDbConn
 
--- instance HasBirdFamiliesCache AppCtx where
---   birdFamilesCache = appCtx . axBirdFamilesCache
+instance HasFamiliesCache AppCtx where
+  familiesCache = appCtx . axBirdFamiliesCache
+
+instance HasRegionsCache AppCtx where
+  regionsCache = appCtx . axRegionsCache
 
 data DbError
   = PostgresError !Text

@@ -4,7 +4,10 @@ class AutoComplete {
     if (!results.length) {
       return null;
     }
-    const items = results.map(item => m("div.item", {onclick: (e) => { console.log('clicked item', item); selected(item);}}, item));
+    const items = results.map(item => m("div.item", {onclick: (e) => {
+      console.log('clicked item', item);
+      selected(item);
+    }}, item.elem));
     return m("div.autocomplete-form", items);
   }
 }
@@ -45,8 +48,8 @@ class SearchForm {
       method: "POST",
       url: `/api/v1/search`,
       body: {
-        "family": query.family,
-        "region": query.region
+        "family": query.family.key,
+        "region": query.region.key
       }
     })
     .then((result) => {
@@ -66,7 +69,12 @@ class SearchForm {
       this.current.matchingFamily = [];
       return;
     }
-    const results = app.familyNames.filter(n => n.toLowerCase().indexOf(term) >= 0);
+    const results = app.familyNames.filter(n => n.common_name.toLowerCase().indexOf(term) >= 0)
+          .map(n => { return {
+            elem: m(FamilyName, {...n}),
+            key: n.scientific_name,
+            text: n.common_name + " (" + n.scientific_name + ")"
+          }; });
     console.log('auto complete res', results);
     this.current.matchingFamily = results;
   }
@@ -76,7 +84,8 @@ class SearchForm {
       this.current.matchingRegion = [];
       return;
     }
-    const results = app.regions.filter(n => n.toLowerCase().indexOf(term) >= 0);
+    const results = app.regions.filter(n => n.region_name.toLowerCase().indexOf(term) >= 0)
+          .map(n => { return {elem: m("span", n.region_name), key: n.region_code, text: n.region_name}; });
     console.log('auto complete res', results);
     this.current.matchingRegion = results;
   }
@@ -95,7 +104,10 @@ class SearchForm {
               },
               // when the family input box loses focus, remove the autocomplete
               onblur: () => { setTimeout(() => {vnode.state.current.matchingFamily = [];}, 10); },
-              value: vnode.state.current.family ? vnode.state.current.family : vnode.state.current.typingFamily
+              value: vnode.state.current.family ?
+                // (vnode.state.current.family.common_name + " (" + vnode.state.current.family.scientific_name + ")") :
+                vnode.state.current.family.text :
+                vnode.state.current.typingFamily
             }),
             m(AutoComplete, {
               results: vnode.state.current.matchingFamily,
@@ -117,7 +129,7 @@ class SearchForm {
               },
               // when the region input box loses focus, remove the autocomplete
               onblur: () => { setTimeout(() => {vnode.state.current.matchingRegion = [];}, 10); },
-              value: vnode.state.current.region ? vnode.state.current.region : vnode.state.current.typingRegion
+              value: vnode.state.current.region ? vnode.state.current.region.text : vnode.state.current.typingRegion
             }),
             m(AutoComplete, {
               results: vnode.state.current.matchingRegion,
@@ -162,13 +174,12 @@ class BirdList {
   view (vnode) {
     const res = vnode.attrs.result;
     console.log('Redering BirdList', res);
-    const species = Object.keys(res);
     if (res.length <= 0) {
       return null;
     }
     return m("div", [
-      m("div.alert.alert-info", `${species.length} species found.`),
-      ...species.map((sp) => m(BirdPhoto, {species: sp, photos: res[sp]}))
+      m("div.alert.alert-info", `${res.length} species found.`),
+      ...res.map(sp => m(BirdPhoto, {species: sp.common_name, photos: sp.image_urls}))
     ]);
   }
 }
@@ -186,7 +197,7 @@ class Errors {
 class App {
   constructor () {
     // app state
-    this.results = {};
+    this.results = [];
     this.searching = false;
     this.errors = [];
     this.familyNames = [];
@@ -205,7 +216,7 @@ class App {
     })
     .then((result) => {
       console.log('family results', result);
-      app.familyNames = Object.values(result);
+      app.familyNames = result;
     })
     .catch((err) => {
       console.log('error fetching family names', err);
@@ -221,7 +232,7 @@ class App {
       .then((result) => {
         // console.log('region results', result);
         // app.regions = result;
-        app.regions = Object.values(result);
+        app.regions = result;
       })
       .catch((err) => {
         console.log('error fetching family names', err);
@@ -238,3 +249,17 @@ class App {
     ]);
   }
 }
+
+const FamilyName = {
+  view: function(vnode) {
+    return m("span", [m("span", vnode.attrs.common_name),
+                      m("small", m("i", " (" + vnode.attrs.scientific_name + ")"))
+                     ]);
+  }
+};
+
+// const mkAutoItem = (n) => m("span",
+//                             [ m("span", n.common_name),
+//                               m("small", m("i", " (" + n.scientific_name + ")"))
+//                             ]);
+

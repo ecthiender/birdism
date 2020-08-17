@@ -1,5 +1,7 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Api where
 
@@ -11,13 +13,14 @@ import qualified Data.Aeson.TH     as J
 
 import           Config
 import           Lib
+import           Types
 
 data SearchRequest
   = SearchRequest
-  { _srqRegion :: !Region
-  , _srqFamily :: !Family
+  { _srqRegion :: !RegionCode
+  , _srqFamily :: !ScientificName
+  -- ^ 'ScientificName' of the family
   } deriving (Show, Eq)
-
 $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchRequest)
 
 newtype SearchResponse
@@ -33,10 +36,15 @@ processSearch
      , HasEBirdConf r
      , MonadError e m
      , AsEbirdError e
+     , HasAppCtx r
      )
   => SearchRequest -> m SearchResponse
-processSearch (SearchRequest region family) =
-  SearchResponse <$> getCorpus region family
+processSearch (SearchRequest region (ScientificName familySciName)) = do
+  fams <- asks (^. axBirdFamiliesCache)
+  let found = find (\f -> _fScientificName f == familySciName) (unFamiliesCache fams)
+  case found of
+    Nothing     -> throwError $ (_EbirdErrorSearch #) $ "Invalid family"
+    Just family -> SearchResponse <$> getCorpus region family
 
 getFamilies
   :: ( MonadIO m
@@ -45,7 +53,7 @@ getFamilies
      )
   => m FamilyNames
 getFamilies =
-  asks (^. axBirdFamiliesCache)
+  asks (^. axBirdFamiliesCache) >>= pure . unFamiliesCache
 
 getRegions
   :: ( MonadIO m
@@ -54,4 +62,4 @@ getRegions
      )
   => m RegionNames
 getRegions =
-  asks (^. axRegionsCache)
+  asks (^. axRegionsCache) >>= pure . unRegionsCache

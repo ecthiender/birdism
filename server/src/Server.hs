@@ -22,7 +22,7 @@ httpApp config = liftIO $ Spock.spockT id $ do
   Spock.middleware $ logStdoutDev
   Spock.middleware $ staticPolicy (addBase "../app/")
 
-  -- redirect / to /console
+  -- redirect / to /index.html
   Spock.get Spock.root $ Spock.redirect "index.html"
 
   -- simple ping API for status check
@@ -43,8 +43,7 @@ newtype AppM a
   deriving (Functor, Applicative, Monad, MonadReader AppCtx, MonadError AppError, MonadIO)
 
 runAppM :: AppM a -> AppCtx -> IO (Either AppError a)
-runAppM app config = runExceptT $ runReaderT (unAppM app) config
-
+runAppM app = runExceptT . runReaderT (unAppM app)
 
 httpGetHandler :: J.ToJSON a => AppCtx -> AppM a -> Spock.ActionCtxT () IO ()
 httpGetHandler config (AppM service) = do

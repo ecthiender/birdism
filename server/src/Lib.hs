@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Lib
   ( getCorpus
@@ -22,7 +23,8 @@ import           Common
 import           Control.Lens
 
 import qualified Control.Concurrent.Async   as Async
-import qualified Data.HashMap.Strict        as Map
+import qualified Data.Aeson.Casing          as J
+import qualified Data.Aeson.TH              as J
 import qualified Database.PostgreSQL.Simple as PG
 
 import           Config
@@ -35,7 +37,14 @@ type ImgUrl = Text
 
 -- Corpus is the result type of this program. This basically means the corpus
 -- (images of birds) for the end user to study
-type SearchResult = Map.HashMap CommonName [ImgUrl]
+data SearchResultItem
+  = SearchResultItem
+  { _srrCommonName :: !CommonName
+  , _srrImageUrls  :: ![ImgUrl]
+  } deriving (Show, Eq)
+$(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchResultItem)
+
+type SearchResult = [SearchResultItem]
 
 getSpeciesList
   :: ( MonadIO m
@@ -46,7 +55,7 @@ getSpeciesList
      , HasFlickrConf r
      , AsEbirdError e
      )
-  => Region -> Family -> m [Bird]
+  => RegionName -> Family -> m [Bird]
 getSpeciesList region family = do
   allSpecies <- getSpecies family
   debugTrace (Just "ALL SPECIES") allSpecies
@@ -67,18 +76,17 @@ getCorpus
      , HasDbConfig r
      , HasEBirdConf r
      , HasFlickrConf r
-     -- , HasAppCtx r
      , AsEbirdError e
      )
-  => Region -> Family -> m SearchResult
-getCorpus region family = do
+  => RegionCode -> Family -> m SearchResult
+getCorpus regCode family = do
   allSpecies <- getSpecies family
-  debugTrace (Just "ALL SPECIES") allSpecies
+  debugTrace (Just "ALL SPECIES") $ map uSpeciesCode allSpecies
   liftIO $ print $ length allSpecies
-  regcode  <- getRegionCode region
-  debugTrace (Just "REGION CODE") regcode
-  checklist  <- getChecklist regcode family
-  debugTrace (Just "CHECKLIST") (map bSpCode $ cBirds checklist)
+  -- regcode  <- getRegionCode region
+  -- debugTrace (Just "REGION CODE") regcode
+  checklist  <- getChecklist regCode family
+  debugTrace (Just "CHECKLIST") (map (uSpeciesCode . bSpCode) $ cBirds checklist)
   liftIO $ print $ length (cBirds checklist)
   let matchedSpecies = filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
   debugTrace (Just "MATCHED SPECIES") matchedSpecies
@@ -92,8 +100,8 @@ getRegionCode
      , MonadError e m
      , AsEbirdError e
      )
-  => Region -> m RegionCode
-getRegionCode (Region region) = do
+  => RegionName -> m RegionCode
+getRegionCode (RegionName region) = do
   conn <- asks (^. dbConnection)
   let q = "SELECT region_code FROM region WHERE region_name = ?"
   res <- liftIO $ PG.query conn q (PG.Only region)
@@ -118,7 +126,7 @@ getChecklist rc family = do
   where
     checklistToBird (ChecklistObservation spCode comName sciName) =
       Bird (ScientificName sciName) (CommonName comName) (SpeciesCode spCode)
-           Nothing Nothing (uFamily family)
+           Nothing Nothing (_fCommonName family)
 
 
 -- | Given a 'Family' name, fetch a list of species belonging to that family. This is fetched from
@@ -129,7 +137,7 @@ getSpecies
      , HasDbConfig r
      )
   => Family -> m [SpeciesCode]
-getSpecies (Family family) = do
+getSpecies (Family _scName family) = do
   r <- ask
   let conn = r ^. dbConnection
   let q = "SELECT species_code FROM taxonomy WHERE family_common_name = ?"
@@ -147,7 +155,7 @@ getImages
 getImages birds = do
   let commonNames = map bComName birds
   urls <- getImageUrls birds
-  return $ Map.fromList $ zip commonNames urls
+  return $ map (\(cn, iurls) -> SearchResultItem cn iurls) $ zip commonNames urls
 
 -- | Uses 'Async' to concurrently and asynchronously get images from 'searchPhotos' service
 getImageUrls
@@ -162,7 +170,7 @@ getImageUrls birds = do
     searchPhotos apiKey . (uCommonName . bComName)
 
 ------------ list of bird families of the world ------------------
-type FamilyNames = Map.HashMap Text Text
+type FamilyNames = [Family]
 
 getFamilyNamesQuery :: PG.Query
 getFamilyNamesQuery =
@@ -173,13 +181,13 @@ getFamilyNames :: (MonadIO m, MonadReader r m, HasDbConfig r) => m FamilyNames
 getFamilyNames = do
   conn <- asks (^. dbConnection)
   res <- liftIO $ PG.query_ conn getFamilyNamesQuery
-  let familyCommonNames = Map.fromList $
+  let familyCommonNames = map (uncurry Family) $
                           filter (\(x,y) -> x /= "" && y /= "") $
                           map (\(x,y) -> (fromMaybe "" x, fromMaybe "" y)) res
   return familyCommonNames
 
 ----------------- list of regions ---------------
-type RegionNames = Map.HashMap Text Text
+type RegionNames = [Region]
 
 getRegionNamesQuery :: PG.Query
 getRegionNamesQuery =
@@ -194,7 +202,7 @@ getRegionNames
 getRegionNames = do
   conn <- asks (^. dbConnection)
   res <- liftIO $ PG.query_ conn getRegionNamesQuery
-  let regionNames = Map.fromList $
+  let regionNames = map (\(x, y)-> Region (RegionCode x) (RegionName y)) $
                     filter (\(x,y) -> x /= "" && y /= "") $
                     map (\(x,y) -> (fromMaybe "" x, fromMaybe "" y)) res
   return regionNames

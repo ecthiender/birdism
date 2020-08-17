@@ -8,7 +8,6 @@ module Common
   )
   where
 
-
 import           Control.Applicative         as M (Alternative (..))
 import           Control.Arrow               as M (first, second, (&&&), (***), (<<<), (>>>))
 -- import           Control.Monad.Base                as M
