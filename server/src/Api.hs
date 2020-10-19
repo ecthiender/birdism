@@ -39,7 +39,7 @@ processSearch
      , HasAppCtx r
      )
   => SearchRequest -> m SearchResponse
-processSearch (SearchRequest region (ScientificName familySciName)) = do
+processSearch (SearchRequest region familySciName) = do
   fams <- asks (^. axBirdFamiliesCache)
   let found = find (\f -> _fScientificName f == familySciName) (unFamiliesCache fams)
   case found of

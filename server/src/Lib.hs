@@ -126,7 +126,7 @@ getChecklist rc family = do
   where
     checklistToBird (ChecklistObservation spCode comName sciName) =
       Bird (ScientificName sciName) (CommonName comName) (SpeciesCode spCode)
-           Nothing Nothing (_fCommonName family)
+           Nothing Nothing (uCommonName $ _fCommonName family)
 
 
 -- | Given a 'Family' name, fetch a list of species belonging to that family. This is fetched from
@@ -141,7 +141,7 @@ getSpecies (Family _scName family) = do
   r <- ask
   let conn = r ^. dbConnection
   let q = "SELECT species_code FROM taxonomy WHERE family_common_name = ?"
-  res <- liftIO $ PG.query conn q (PG.Only family)
+  res <- liftIO $ PG.query conn q (PG.Only $ uCommonName family)
   return $ (SpeciesCode . PG.fromOnly) <$> res
 
 -- | Given a list of 'Bird's, get the final search result, by combining the common names and a list
@@ -181,7 +181,7 @@ getFamilyNames :: (MonadIO m, MonadReader r m, HasDbConfig r) => m FamilyNames
 getFamilyNames = do
   conn <- asks (^. dbConnection)
   res <- liftIO $ PG.query_ conn getFamilyNamesQuery
-  let familyCommonNames = map (uncurry Family) $
+  let familyCommonNames = map (\(x, y) -> Family (ScientificName x) (CommonName y)) $
                           filter (\(x,y) -> x /= "" && y /= "") $
                           map (\(x,y) -> (fromMaybe "" x, fromMaybe "" y)) res
   return familyCommonNames

@@ -27,8 +27,8 @@ newtype SpeciesCode
 
 data Family
   = Family
-  { _fScientificName :: !Text
-  , _fCommonName     :: !Text
+  { _fScientificName :: !ScientificName
+  , _fCommonName     :: !CommonName
   } deriving (Show, Eq, Generic)
 $(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''Family)
 
