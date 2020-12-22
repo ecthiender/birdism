@@ -5,17 +5,17 @@
 
 module Worker.PopulateRegion where
 
-import           Common
 import           Control.Lens
 
 import qualified Control.Retry              as Retry
 import qualified Database.PostgreSQL.Simple as PG
-import qualified Say                        as Say
+import qualified Say
 
-import           Config
-import           Init
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Init
+import           Birdism.Types
 import           Service.Ebird
-import           Types
 
 
 populateRegion :: AppConfig -> IO ()

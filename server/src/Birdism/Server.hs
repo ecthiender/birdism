@@ -2,7 +2,7 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 
-module Server where
+module Birdism.Server where
 
 import           Control.Monad.Except
 import           Control.Monad.Reader
@@ -14,8 +14,8 @@ import qualified Network.HTTP.Types.Status            as HTTP
 import qualified Network.Wai                          as Wai
 import qualified Web.Spock.Core                       as Spock
 
-import           Api
-import           Config
+import           Birdism.Api
+import           Birdism.Config
 
 httpApp :: MonadIO m => AppCtx -> m Wai.Middleware
 httpApp config = liftIO $ Spock.spockT id $ do

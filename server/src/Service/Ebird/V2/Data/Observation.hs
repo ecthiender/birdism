@@ -10,10 +10,10 @@ import qualified Data.Aeson              as J
 import qualified Data.Aeson.Casing       as J
 import qualified Data.Text               as T
 
-import           Common
-import           Config
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Types
 import           Service.Ebird.V2.Common
-import           Types
 
 searchCheckListUrl :: Text -> String
 searchCheckListUrl reg = "https://ebird.org/ws2.0/data/obs/"

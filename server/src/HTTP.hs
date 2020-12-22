@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module HTTP where
 
-import           Common
+import           Birdism.Common
 import           Control.Exception    (try)
 import           Control.Lens
 

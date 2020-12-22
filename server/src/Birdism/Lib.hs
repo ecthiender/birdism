@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
-module Lib
+module Birdism.Lib
   ( getCorpus
   , Family
   , Region (..)
@@ -19,13 +19,13 @@ import qualified Control.Concurrent.Async as Async
 import qualified Data.Aeson.Casing        as J
 import qualified Data.Aeson.TH            as J
 
-import           Common
-import           Config
-import           Flickr.Photos            (searchPhotos)
-import           Types
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Types
 
-import qualified Data
+import qualified Birdism.Data             as Data
 import qualified Service.Ebird            as ServiceEbird
+import qualified Service.Flickr.Photos    as ServiceFlickr
 
 
 type ImgUrl = Text
@@ -64,9 +64,9 @@ getCorpus regCode family = do
     getImages birds = do
       let commonNames = map bComName birds
       urls <- getImageUrls birds
-      return $ map (\(cn, iurls) -> SearchResultItem cn iurls) $ zip commonNames urls
+      return $ zipWith SearchResultItem commonNames urls
 
     getImageUrls birds = do
       apiKey <- asks (^. fcKey)
       liftIO $ Async.forConcurrently birds $
-        searchPhotos apiKey . (uCommonName . bComName)
+        ServiceFlickr.searchPhotos apiKey . (uCommonName . bComName)

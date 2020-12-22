@@ -1,7 +1,7 @@
 -- | Code related to initialization
 {-# LANGUAGE TemplateHaskell #-}
 
-module Init where
+module Birdism.Init where
 
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.Text.Encoding         as T
@@ -10,9 +10,9 @@ import qualified Database.PostgreSQL.Simple as PG
 import           Data.FileEmbed             (embedFile)
 import           Data.String                (fromString)
 
-import           Common
-import           Config
-import           Data
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Data
 
 initialiseAppCtx :: MonadIO m => AppConfig -> m AppCtx
 initialiseAppCtx (AppConfig dbUrl port ebird flickr) = do

@@ -1,6 +1,6 @@
 -- | Exports the most common functions, data types used from across base. They are annoying to
 -- import everytime and they ubiquitous in Haskell code.
-module Common
+module Birdism.Common
   ( module M
   , debugTrace
   , tshow

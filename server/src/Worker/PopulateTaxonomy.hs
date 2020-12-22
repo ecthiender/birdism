@@ -4,17 +4,18 @@
 
 module Worker.PopulateTaxonomy where
 
-import           Common
 import           Control.Lens
-import           Config
-import           HTTP
-import           Init
 
 import qualified Data.ByteString.Lazy            as BL
 import qualified Data.Text.Encoding              as T
 import qualified Database.PostgreSQL.Simple      as PG
 import qualified Database.PostgreSQL.Simple.Copy as PG
 import qualified System.Exit                     as Sys
+
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Init
+import           HTTP
 
 taxonomyUrl :: String
 taxonomyUrl = "https://api.ebird.org/v2/ref/taxonomy/ebird"

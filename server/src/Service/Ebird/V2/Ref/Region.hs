@@ -17,10 +17,10 @@ import qualified Data.Aeson.Casing       as J
 import qualified Data.Aeson.TH           as J
 import qualified Data.Text               as T
 
-import           Common
-import           Config
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Types
 import           Service.Ebird.V2.Common
-import           Types
 
 data Country = Country
   deriving (Generic, J.FromJSON, J.ToJSON)

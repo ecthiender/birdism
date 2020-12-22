@@ -2,7 +2,7 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Types where
+module Birdism.Types where
 
 import           Data.Hashable
 import           Data.Text                            (Text)

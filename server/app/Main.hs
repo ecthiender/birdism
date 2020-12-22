@@ -3,7 +3,6 @@
 
 module Main where
 
-import           Common
 import           System.Exit                (exitFailure)
 import           Web.Spock.Core
 
@@ -11,9 +10,10 @@ import qualified Data.Aeson                 as J
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified System.Environment         as Sys
 
-import           Config
-import           Init
-import           Server
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Init
+import           Birdism.Server
 import           Worker.PopulateRegion
 import           Worker.PopulateTaxonomy
 

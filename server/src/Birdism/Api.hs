@@ -3,16 +3,17 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
-module Api where
+module Birdism.Api where
 
-import           Common
-import           Config
 import           Control.Lens
-import           Lib
-import           Types
 
 import qualified Data.Aeson.Casing as J
 import qualified Data.Aeson.TH     as J
+
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Lib
+import           Birdism.Types
 
 
 data SearchRequest

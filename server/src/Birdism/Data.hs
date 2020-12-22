@@ -4,14 +4,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | Module to encapsulate functions that work with the database to fetch data
 
-module Data where
+module Birdism.Data where
 
 import           Control.Lens
 import qualified Database.PostgreSQL.Simple as PG
 
-import           Common
-import           Config
-import           Types
+import           Birdism.Common
+import           Birdism.Config
+import           Birdism.Types
 
 
 ------------ list of bird families of the world ------------------

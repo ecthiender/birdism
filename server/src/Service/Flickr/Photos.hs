@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-module Flickr.Photos where
+module Service.Flickr.Photos where
 
 import           Control.Lens
 import           Control.Monad.IO.Class (liftIO)

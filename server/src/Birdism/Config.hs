@@ -1,9 +1,9 @@
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE DeriveGeneric     #-}
 
-module Config
+module Birdism.Config
   -- ( AppConfig (..)
   -- , AppCtx (..)
   -- , AppError (..)
@@ -19,7 +19,6 @@ module Config
   -- )
   where
 
-import           Common
 import           Control.Lens
 import           System.Environment         (lookupEnv)
 
@@ -30,7 +29,8 @@ import qualified Data.ByteString.Char8      as B
 import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
 
-import           Types
+import           Birdism.Common
+import           Birdism.Types
 
 configEnv :: String
 configEnv = "BIRDISM_CONFIG"

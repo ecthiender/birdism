@@ -2,14 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Service.Ebird.V2.Common where
 
-import           Common
 import           Control.Lens
 
 import qualified Data.Aeson         as J
 import qualified Data.Text          as T
 import qualified Data.Text.Encoding as T
 
-import           Config
+import           Birdism.Common
+import           Birdism.Config
 import           HTTP
 
 -- | Helper function to call the EBird API
@@ -28,9 +28,7 @@ ebirdApiGetService
 ebirdApiGetService url = do
   r <- ask
   let token = r ^. ebcToken
-  debugTrace (Just "[RUNNING EBIRD GET SERVICE]") "running service.."
   resp <- runExceptT $ httpGetJSON url [("X-eBirdApiToken", T.encodeUtf8 token)]
-  debugTrace (Just "[COMPLETE EBIRD GET SERVICE]") "service completed.."
   case resp of
     Left e    -> throwError $ httpErrToEbirdError e
     Right res -> return res
