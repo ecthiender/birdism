@@ -6,14 +6,14 @@
 module Api where
 
 import           Common
+import           Config
 import           Control.Lens
+import           Lib
+import           Types
 
 import qualified Data.Aeson.Casing as J
 import qualified Data.Aeson.TH     as J
 
-import           Config
-import           Lib
-import           Types
 
 data SearchRequest
   = SearchRequest
@@ -43,7 +43,7 @@ processSearch (SearchRequest region familySciName) = do
   fams <- asks (^. axBirdFamiliesCache)
   let found = find (\f -> _fScientificName f == familySciName) (unFamiliesCache fams)
   case found of
-    Nothing     -> throwError $ (_EbirdErrorSearch #) $ "Invalid family"
+    Nothing     -> throwError $ (_EbirdErrorSearch #) "Invalid family"
     Just family -> SearchResponse <$> getCorpus region family
 
 getFamilies

@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE DeriveGeneric     #-}
 
 module Config
   -- ( AppConfig (..)
@@ -39,19 +40,30 @@ defaultServerPort = 8888
 
 data EBirdConf
   = EBirdConf { _ebcToken :: Text }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
 
 makeClassy ''EBirdConf
 
-$(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''EBirdConf)
+-- $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''EBirdConf)
+instance J.ToJSON EBirdConf where
+  toJSON = J.genericToJSON (J.aesonDrop 4 J.snakeCase)
+
+instance J.FromJSON EBirdConf where
+  parseJSON = J.genericParseJSON (J.aesonDrop 4 J.snakeCase)
 
 data FlickrConf
   = FlickrConf
   { _fcKey    :: !Text
   , _fcSecret :: !Text
-  } deriving (Show, Eq)
+  } deriving (Show, Eq, Generic)
 
-$(J.deriveJSON (J.aesonDrop 3 J.snakeCase) ''FlickrConf)
+instance J.ToJSON FlickrConf where
+  toJSON = J.genericToJSON (J.aesonDrop 3 J.snakeCase)
+
+instance J.FromJSON FlickrConf where
+  parseJSON = J.genericParseJSON (J.aesonDrop 3 J.snakeCase)
+
+-- $(J.deriveJSON (J.aesonDrop 3 J.snakeCase) ''FlickrConf)
 
 makeClassy ''FlickrConf
 
@@ -62,9 +74,15 @@ data AppConfig
   , acServerPort  :: !(Maybe Int)
   , acEbird       :: !EBirdConf
   , acFlickr      :: !FlickrConf
-  } deriving (Show, Eq)
+  } deriving (Show, Eq, Generic)
 
-$(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''AppConfig)
+instance J.ToJSON AppConfig where
+  toJSON = J.genericToJSON (J.aesonDrop 2 J.snakeCase)
+
+instance J.FromJSON AppConfig where
+  parseJSON = J.genericParseJSON (J.aesonDrop 2 J.snakeCase)
+
+-- $(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''AppConfig)
 
 data DbConfig
   = DbConfig

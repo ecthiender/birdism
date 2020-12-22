@@ -4,17 +4,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-module Ebird.Region where
+module Service.Ebird.V2.Ref.Region
+  ( getCountries
+  , getSubRegions
+  , getSubnationa1Regions
+  , getSubnationa2Regions
+  , RRegion(..)
+  ) where
+
+import qualified Data.Aeson              as J
+import qualified Data.Aeson.Casing       as J
+import qualified Data.Aeson.TH           as J
+import qualified Data.Text               as T
 
 import           Common
-
-import qualified Data.Aeson        as J
-import qualified Data.Aeson.Casing as J
-import qualified Data.Aeson.TH     as J
-import qualified Data.Text         as T
-
 import           Config
-import           Ebird.Common
+import           Service.Ebird.V2.Common
 import           Types
 
 data Country = Country
@@ -111,26 +116,3 @@ getSubRegions
   => m SubRegions
 getSubRegions = do
   ebirdApiGetService subregionListUrl
-
-data ChecklistObservation
-  = ChecklistObservation
-  { _coSpeciesCode :: !Text
-  , _coComName     :: !Text
-  , _coSciName     :: !Text
-  } deriving (Show, Eq)
-
-$(J.deriveJSON (J.aesonDrop 3 J.camelCase) ''ChecklistObservation)
-
-searchCheckListUrl :: Text -> String
-searchCheckListUrl reg = "https://ebird.org/ws2.0/data/obs/"
-                         <> T.unpack reg <> "/recent?back=30"
-searchCheckLists
-  :: ( MonadReader r m
-     , HasEBirdConf r
-     , MonadError e m
-     , AsEbirdError e
-     , MonadIO m
-     )
-  => RegionCode -> m [ChecklistObservation]
-searchCheckLists (RegionCode region) = do
-  ebirdApiGetService (searchCheckListUrl region)

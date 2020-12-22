@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TemplateHaskell            #-}
 
 module Types where
 
@@ -10,35 +10,44 @@ import           GHC.Generics      (Generic)
 
 import qualified Data.Aeson        as J
 import qualified Data.Aeson.Casing as J
-import qualified Data.Aeson.TH     as J
 
 
 newtype ScientificName
   = ScientificName { uScientificName :: Text }
-  deriving (Show, Eq, Generic, J.ToJSON, J.FromJSON)
+  deriving stock (Show, Eq, Generic)
+  deriving newtype (J.ToJSON, J.FromJSON)
 
 newtype CommonName
   = CommonName { uCommonName :: Text }
-  deriving (Show, Eq, Generic, Hashable, J.FromJSONKey, J.ToJSONKey, J.FromJSON, J.ToJSON)
+  deriving stock (Show, Eq, Generic)
+  deriving newtype (Hashable, J.FromJSONKey, J.ToJSONKey, J.FromJSON, J.ToJSON)
 
 newtype SpeciesCode
   = SpeciesCode { uSpeciesCode :: Text }
-  deriving (Show, Eq)
+  deriving stock (Show, Eq)
+  deriving newtype (J.ToJSON, J.FromJSON)
 
 data Family
   = Family
   { _fScientificName :: !ScientificName
   , _fCommonName     :: !CommonName
   } deriving (Show, Eq, Generic)
-$(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''Family)
+
+instance J.ToJSON Family where
+  toJSON = J.genericToJSON (J.aesonDrop 2 J.snakeCase)
+
+instance J.FromJSON Family where
+  parseJSON = J.genericParseJSON (J.aesonDrop 2 J.snakeCase)
 
 newtype RegionCode
   = RegionCode { uRegionCode :: Text }
-  deriving (Show, Eq, Generic, J.FromJSON, J.ToJSON) --, PG.FromRow)
+  deriving stock (Show, Eq, Generic)
+  deriving newtype (J.FromJSON, J.ToJSON) --, PG.FromRow)
 
 newtype RegionName
   = RegionName { unRegionName :: Text }
-  deriving (Show, Eq, Generic, J.FromJSON, J.ToJSON)
+  deriving stock (Show, Eq, Generic)
+  deriving newtype (J.FromJSON, J.ToJSON)
 
 -- | A particular species; maybe in future change the name to `Species`
 data Bird
@@ -55,8 +64,13 @@ data Region
   = Region
   { _rRegionCode :: !RegionCode
   , _rRegionName :: !RegionName
-  } deriving (Show, Eq) --, Generic, J.FromJSON, J.ToJSON)
-$(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''Region)
+  } deriving (Show, Eq, Generic)
+
+instance J.ToJSON Region where
+  toJSON = J.genericToJSON (J.aesonDrop 2 J.snakeCase)
+
+instance J.FromJSON Region where
+  parseJSON = J.genericParseJSON (J.aesonDrop 2 J.snakeCase)
 
 data Checklist
   = Checklist

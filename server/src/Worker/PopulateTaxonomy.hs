@@ -5,23 +5,16 @@
 module Worker.PopulateTaxonomy where
 
 import           Common
-import           Control.Concurrent              (threadDelay)
 import           Control.Lens
-import           Data.List.Split                 (chunksOf)
+import           Config
+import           HTTP
+import           Init
 
-import qualified Control.Concurrent.Async        as Async
 import qualified Data.ByteString.Lazy            as BL
-import qualified Data.Text                       as T
 import qualified Data.Text.Encoding              as T
 import qualified Database.PostgreSQL.Simple      as PG
 import qualified Database.PostgreSQL.Simple.Copy as PG
 import qualified System.Exit                     as Sys
-
-import           Config
-import           Ebird.Region
-import           HTTP
-import           Init
-import           Types
 
 taxonomyUrl :: String
 taxonomyUrl = "https://api.ebird.org/v2/ref/taxonomy/ebird"
@@ -39,6 +32,7 @@ populateTaxonomy config = do
       reply <- PG.putCopyEnd (ctx ^. dbConnection)
       print reply
 
+copyQ :: PG.Query
 copyQ = "COPY taxonomy(scientific_name, common_name, species_code, category, taxonomy_order, common_name_code, scientific_name_code, banding_codes, order_name, family_common_name, family_scientific_name, report_as, extinct, extinct_year) FROM STDIN DELIMITER ',' CSV HEADER;"
 
 truncateTaxonomyTable :: PG.Connection -> IO ()

@@ -16,7 +16,7 @@ module Lib
   , getImageUrls
   , getFamilyNames
   , getRegionNames
-  , getSpeciesList
+  -- , getSpeciesList
   ) where
 
 import           Common
@@ -28,8 +28,8 @@ import qualified Data.Aeson.TH              as J
 import qualified Database.PostgreSQL.Simple as PG
 
 import           Config
-import           Ebird.Region               (ChecklistObservation (..), searchCheckLists)
 import           Flickr.Photos              (searchPhotos)
+import           Service.Ebird
 import           Types
 
 
@@ -46,28 +46,28 @@ $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchResultItem)
 
 type SearchResult = [SearchResultItem]
 
-getSpeciesList
-  :: ( MonadIO m
-     , MonadReader r m
-     , MonadError e m
-     , HasDbConfig r
-     , HasEBirdConf r
-     , HasFlickrConf r
-     , AsEbirdError e
-     )
-  => RegionName -> Family -> m [Bird]
-getSpeciesList region family = do
-  allSpecies <- getSpecies family
-  debugTrace (Just "ALL SPECIES") allSpecies
-  liftIO $ print $ length allSpecies
-  regcode    <- getRegionCode region
-  debugTrace (Just "REGION CODE") regcode
-  checklist  <- getChecklist regcode family
-  debugTrace (Just "CHECKLIST") (map bSpCode $ cBirds checklist)
-  liftIO $ print $ length (cBirds checklist)
-  let matchedSpecies = filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
-  debugTrace (Just "MATCHED SPECIES") matchedSpecies
-  return matchedSpecies
+-- getSpeciesList
+--   :: ( MonadIO m
+--      , MonadReader r m
+--      , MonadError e m
+--      , HasDbConfig r
+--      , HasEBirdConf r
+--      , HasFlickrConf r
+--      , AsEbirdError e
+--      )
+--   => RegionName -> Family -> m [Bird]
+-- getSpeciesList region family = do
+--   allSpecies <- getSpecies family
+--   debugTrace (Just "ALL SPECIES") allSpecies
+--   liftIO $ print $ length allSpecies
+--   regcode    <- getRegionCode region
+--   debugTrace (Just "REGION CODE") regcode
+--   checklist  <- getChecklist regcode family
+--   debugTrace (Just "CHECKLIST") (map bSpCode $ cBirds checklist)
+--   liftIO $ print $ length (cBirds checklist)
+--   let matchedSpecies = filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
+--   debugTrace (Just "MATCHED SPECIES") matchedSpecies
+--   return matchedSpecies
 
 getCorpus
   :: ( MonadIO m
@@ -85,29 +85,31 @@ getCorpus regCode family = do
   liftIO $ print $ length allSpecies
   -- regcode  <- getRegionCode region
   -- debugTrace (Just "REGION CODE") regcode
+  -- get all the available species in the region
+  foundSpecies <- getSpeciesListByRegion regCode
   checklist  <- getChecklist regCode family
-  debugTrace (Just "CHECKLIST") (map (uSpeciesCode . bSpCode) $ cBirds checklist)
+  debugTrace (Just "AVL SPECIES") foundSpecies
   liftIO $ print $ length (cBirds checklist)
   let matchedSpecies = filter (\s -> bSpCode s `elem` allSpecies) $ cBirds checklist
   debugTrace (Just "MATCHED SPECIES") matchedSpecies
   liftIO $ print $ length matchedSpecies
   getImages matchedSpecies
 
-getRegionCode
-  :: ( MonadIO m
-     , MonadReader r m
-     , HasDbConfig r
-     , MonadError e m
-     , AsEbirdError e
-     )
-  => RegionName -> m RegionCode
-getRegionCode (RegionName region) = do
-  conn <- asks (^. dbConnection)
-  let q = "SELECT region_code FROM region WHERE region_name = ?"
-  res <- liftIO $ PG.query conn q (PG.Only region)
-  case res of
-    []      -> throwError $ (_EbirdErrorSearch #) $ "could not find region '" <> region <> "'"
-    (reg:_) -> return $ (RegionCode . PG.fromOnly) reg
+-- getRegionCode
+--   :: ( MonadIO m
+--      , MonadReader r m
+--      , HasDbConfig r
+--      , MonadError e m
+--      , AsEbirdError e
+--      )
+--   => RegionName -> m RegionCode
+-- getRegionCode (RegionName region) = do
+--   conn <- asks (^. dbConnection)
+--   let q = "SELECT region_code FROM region WHERE region_name = ?"
+--   res <- liftIO $ PG.query conn q (PG.Only region)
+--   case res of
+--     []      -> throwError $ (_EbirdErrorSearch #) $ "could not find region '" <> region <> "'"
+--     (reg:_) -> return $ (RegionCode . PG.fromOnly) reg
 
 -- | Given a 'RegionCode'
 getChecklist
@@ -138,11 +140,10 @@ getSpecies
      )
   => Family -> m [SpeciesCode]
 getSpecies (Family _scName family) = do
-  r <- ask
-  let conn = r ^. dbConnection
+  conn <- asks (^. dbConnection)
   let q = "SELECT species_code FROM taxonomy WHERE family_common_name = ?"
   res <- liftIO $ PG.query conn q (PG.Only $ uCommonName family)
-  return $ (SpeciesCode . PG.fromOnly) <$> res
+  return $ SpeciesCode . PG.fromOnly <$> res
 
 -- | Given a list of 'Bird's, get the final search result, by combining the common names and a list
 -- of image URLs into a hashmap

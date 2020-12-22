@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:buster-slim
 WORKDIR /birdism/server
 RUN apt-get -y update \
   && apt-get install -y libpq-dev ca-certificates \

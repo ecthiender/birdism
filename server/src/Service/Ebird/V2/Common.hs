@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Ebird.Common where
+module Service.Ebird.V2.Common where
 
 import           Common
 import           Control.Lens

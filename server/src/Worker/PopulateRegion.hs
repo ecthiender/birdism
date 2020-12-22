@@ -13,8 +13,8 @@ import qualified Database.PostgreSQL.Simple as PG
 import qualified Say                        as Say
 
 import           Config
-import           Ebird.Region
 import           Init
+import           Service.Ebird
 import           Types
 
 
