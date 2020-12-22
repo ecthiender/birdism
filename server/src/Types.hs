@@ -5,27 +5,29 @@
 module Types where
 
 import           Data.Hashable
-import           Data.Text         (Text)
-import           GHC.Generics      (Generic)
+import           Data.Text                            (Text)
+import           GHC.Generics                         (Generic)
 
-import qualified Data.Aeson        as J
-import qualified Data.Aeson.Casing as J
+import qualified Data.Aeson                           as J
+import qualified Data.Aeson.Casing                    as J
+import qualified Database.PostgreSQL.Simple.FromField as PG
+import qualified Database.PostgreSQL.Simple.ToField   as PG
 
 
 newtype ScientificName
   = ScientificName { uScientificName :: Text }
   deriving stock (Show, Eq, Generic)
-  deriving newtype (J.ToJSON, J.FromJSON)
+  deriving newtype (J.ToJSON, J.FromJSON, PG.ToField, PG.FromField)
 
 newtype CommonName
   = CommonName { uCommonName :: Text }
   deriving stock (Show, Eq, Generic)
-  deriving newtype (Hashable, J.FromJSONKey, J.ToJSONKey, J.FromJSON, J.ToJSON)
+  deriving newtype ( Hashable, J.FromJSONKey, J.ToJSONKey, J.FromJSON, J.ToJSON, PG.ToField, PG.FromField)
 
 newtype SpeciesCode
   = SpeciesCode { uSpeciesCode :: Text }
   deriving stock (Show, Eq)
-  deriving newtype (J.ToJSON, J.FromJSON)
+  deriving newtype (J.ToJSON, J.FromJSON, PG.ToField, PG.FromField)
 
 data Family
   = Family
@@ -42,12 +44,12 @@ instance J.FromJSON Family where
 newtype RegionCode
   = RegionCode { uRegionCode :: Text }
   deriving stock (Show, Eq, Generic)
-  deriving newtype (J.FromJSON, J.ToJSON) --, PG.FromRow)
+  deriving newtype (J.FromJSON, J.ToJSON, PG.FromField, PG.ToField)
 
 newtype RegionName
   = RegionName { unRegionName :: Text }
   deriving stock (Show, Eq, Generic)
-  deriving newtype (J.FromJSON, J.ToJSON)
+  deriving newtype (J.FromJSON, J.ToJSON, PG.FromField, PG.ToField)
 
 -- | A particular species; maybe in future change the name to `Species`
 data Bird
@@ -57,8 +59,13 @@ data Bird
   , bSpCode        :: !SpeciesCode
   , bCategory      :: !(Maybe Text)
   , bOrder         :: !(Maybe Text)
-  , bFamilyComName :: !Text
+  , bFamilyComName :: !CommonName
   } deriving (Show, Eq)
+
+makeBird :: SpeciesCode -> CommonName -> ScientificName -> Family -> Bird
+makeBird spCode comName sciName family =
+  Bird sciName comName spCode Nothing Nothing (_fCommonName family)
+
 
 data Region
   = Region
@@ -77,3 +84,7 @@ data Checklist
   { cRegion :: RegionCode
   , cBirds  :: [Bird]
   } deriving (Show, Eq)
+
+
+type FamilyNames = [Family]
+type RegionNames = [Region]

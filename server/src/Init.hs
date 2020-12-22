@@ -12,7 +12,7 @@ import           Data.String                (fromString)
 
 import           Common
 import           Config
-import           Lib
+import           Data
 
 initialiseAppCtx :: MonadIO m => AppConfig -> m AppCtx
 initialiseAppCtx (AppConfig dbUrl port ebird flickr) = do

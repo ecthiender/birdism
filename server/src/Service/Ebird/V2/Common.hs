@@ -28,7 +28,9 @@ ebirdApiGetService
 ebirdApiGetService url = do
   r <- ask
   let token = r ^. ebcToken
+  debugTrace (Just "[RUNNING EBIRD GET SERVICE]") "running service.."
   resp <- runExceptT $ httpGetJSON url [("X-eBirdApiToken", T.encodeUtf8 token)]
+  debugTrace (Just "[COMPLETE EBIRD GET SERVICE]") "service completed.."
   case resp of
     Left e    -> throwError $ httpErrToEbirdError e
     Right res -> return res

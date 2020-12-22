@@ -21,9 +21,9 @@ searchCheckListUrl reg = "https://ebird.org/ws2.0/data/obs/"
 
 data ChecklistObservation
   = ChecklistObservation
-  { _coSpeciesCode :: !Text
-  , _coComName     :: !Text
-  , _coSciName     :: !Text
+  { _coSpeciesCode :: !SpeciesCode
+  , _coComName     :: !CommonName
+  , _coSciName     :: !ScientificName
   } deriving (Show, Eq, Generic)
 
 instance J.ToJSON ChecklistObservation where
