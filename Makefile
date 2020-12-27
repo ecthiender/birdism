@@ -3,7 +3,7 @@ registry := rayanon
 
 project_dir := $(shell pwd)/server
 cabal_file  := $(project_dir)/$(project).cabal
-build_dir   := $(project_dir)/$(shell stack path --dist-dir)/build
+build_dir   := $(project_dir)/$(shell cd server && stack path --no-install-ghc --dist-dir)/build
 version     := v$(shell grep -oP '^version:\s*\K.*' $(cabal_file))
 
 image: $(cabal_file)
