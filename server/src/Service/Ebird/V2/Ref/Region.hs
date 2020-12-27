@@ -1,8 +1,10 @@
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 module Service.Ebird.V2.Ref.Region
   ( getCountries
@@ -49,15 +51,8 @@ $(J.deriveJSON (J.aesonDrop 3 J.snakeCase) ''SubRegion)
 
 newtype SubRegions
   = SubRegions { unSubRegions :: [RRegion Subnational2] }
-  deriving (Show, Eq, Generic, J.FromJSON, J.ToJSON)
-
-instance Semigroup SubRegions where
-  (SubRegions x) <> (SubRegions y) = SubRegions $ x <> y
-
-instance Monoid SubRegions where
-  mempty = SubRegions []
-
-data Countries
+  deriving (Show, Eq, Generic)
+  deriving newtype (Semigroup, Monoid , J.FromJSON, J.ToJSON)
 
 countriesListUrl :: String
 countriesListUrl = "https://ebird.org/ws2.0/ref/region/list/country/world.json"

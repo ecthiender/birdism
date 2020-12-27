@@ -5,7 +5,7 @@ class AutoComplete {
       return null;
     }
     const items = results.map(item => m("div.item", {onclick: (e) => {
-      console.log('clicked item', item);
+      // console.log('clicked item', item);
       selected(item);
     }}, item.elem));
     return m("div.autocomplete-form", items);
@@ -53,12 +53,12 @@ class SearchForm {
       }
     })
     .then((result) => {
-      console.log('search results', result);
+      // console.log('search results', result);
       app.results = result.result;
       app.searching = false;
     })
     .catch((err) => {
-      console.log('search error', err);
+      console.error('search error', err);
       app.searching = false;
       app.errors.push(err);
     });
@@ -75,7 +75,7 @@ class SearchForm {
             key: n.scientific_name,
             text: n.common_name + " (" + n.scientific_name + ")"
           }; });
-    console.log('auto complete res', results);
+    // console.log('auto complete res', results);
     this.current.matchingFamily = results;
   }
 
@@ -86,7 +86,7 @@ class SearchForm {
     }
     const results = app.regions.filter(n => n.region_name.toLowerCase().indexOf(term) >= 0)
           .map(n => { return {elem: m("span", n.region_name), key: n.region_code, text: n.region_name}; });
-    console.log('auto complete res', results);
+    // console.log('auto complete res', results);
     this.current.matchingRegion = results;
   }
 
@@ -95,9 +95,9 @@ class SearchForm {
       m("form.form-inline", {onsubmit: this.handleSubmit(vnode.attrs.app).bind(this)}, [
         m("div.row", [
           m("div.col", [
-            m("input.form-control[type=text][placeholder=Enter a family (flycatcher)]", {
+            m("input.form-control[type=text][placeholder=Enter a family]", {
               oninput: (event) => {
-                console.log('oninput called', event.target.value);
+                // console.log('oninput called', event.target.value);
                 vnode.state.current.family = '';
                 vnode.state.current.typingFamily = event.target.value;
                 this.handleFamilyAutocomplete(event.target.value);
@@ -112,17 +112,17 @@ class SearchForm {
             m(AutoComplete, {
               results: vnode.state.current.matchingFamily,
               selected: (family) => {
-                console.log('selecting family', family);
+                // console.log('selecting family', family);
                 vnode.state.current.family = family;
-                console.log('updated state', vnode.state.current);
+                // console.log('updated state', vnode.state.current);
                 // m.redraw();
               }
             })
           ]),
           m("div.col", [
-            m("input.form-control[type=text][placeholder=Enter a region (bangalore)]", {
+            m("input.form-control[type=text][placeholder=Enter a region]", {
               oninput: (event) => {
-                console.log(event.target.value);
+                // console.log(event.target.value);
                 vnode.state.current.region = '';
                 vnode.state.current.typingRegion = event.target.value;
                 this.handleRegionAutocomplete(event.target.value);
@@ -134,9 +134,9 @@ class SearchForm {
             m(AutoComplete, {
               results: vnode.state.current.matchingRegion,
               selected: (region) => {
-                console.log('selecting region', region);
+                // console.log('selecting region', region);
                 vnode.state.current.region = region;
-                console.log('updated state', vnode.state.current);
+                // console.log('updated state', vnode.state.current);
                 // m.redraw();
               }
             })
@@ -156,7 +156,7 @@ class SearchForm {
 class BirdPhoto {
   view (vnode) {
     const {photos, species} = vnode.attrs;
-    console.log(photos);
+    // console.log(photos);
     const res = photos.map((photo) => {
       return m("img", {src: photo});
     });
@@ -173,7 +173,7 @@ class BirdPhoto {
 class BirdList {
   view (vnode) {
     const res = vnode.attrs.result;
-    console.log('Redering BirdList', res);
+    // console.log('Redering BirdList', res);
     if (res.length <= 0) {
       return null;
     }
@@ -215,11 +215,11 @@ class App {
       url: `/api/v1/families`,
     })
     .then((result) => {
-      console.log('family results', result);
+      // console.log('family results', result);
       app.familyNames = result;
     })
     .catch((err) => {
-      console.log('error fetching family names', err);
+      console.error('error fetching family names', err);
       app.errors.push(err);
     });
   }
@@ -235,7 +235,7 @@ class App {
         app.regions = result;
       })
       .catch((err) => {
-        console.log('error fetching family names', err);
+        console.error('error fetching family names', err);
         app.errors.push(err);
       });
   }
