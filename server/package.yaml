@@ -1,14 +1,13 @@
 name:                birdism
-version:             0.1.0
+version:             0.2.0
 github:              "ecthiender/birdism"
 license:             BSD3
 author:              "Anon Ray"
 maintainer:          "rayanon004@gmail.com"
-copyright:           "2018 Anon Ray"
+copyright:           "2020 Anon Ray"
 
 extra-source-files:
 - README.md
-- ChangeLog.md
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
