@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -7,6 +8,7 @@ module Birdism.Api where
 
 import           Control.Lens
 
+import qualified Data.Aeson        as J
 import qualified Data.Aeson.Casing as J
 import qualified Data.Aeson.TH     as J
 
@@ -14,6 +16,12 @@ import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Lib
 import           Birdism.Types
+import qualified Data.Text         as T
+
+newtype ApiResponse a
+  = ApiResponse { _arpResult :: a }
+  deriving (Show, Eq)
+$(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''ApiResponse)
 
 
 data SearchRequest
@@ -23,11 +31,6 @@ data SearchRequest
   -- ^ 'ScientificName' of the family
   } deriving (Show, Eq)
 $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchRequest)
-
-newtype SearchResponse
-  = SearchResponse { _srpResult :: SearchResult }
-  deriving (Show, Eq)
-$(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchResponse)
 
 processSearch
   :: ( MonadIO m
@@ -39,13 +42,70 @@ processSearch
      , AsEbirdError e
      , HasAppCtx r
      )
-  => SearchRequest -> m SearchResponse
+  => SearchRequest -> m (ApiResponse SearchResult)
 processSearch (SearchRequest region familySciName) = do
+  withFamily (familySciName, _fScientificName) (fmap ApiResponse . getCorpus region)
+
+processSpeciesSearch
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasDbConfig r
+     , HasEBirdConf r
+     , HasFlickrConf r
+     , HasAppCtx r
+     , MonadError e m
+     , AsEbirdError e
+     )
+  => SearchRequest -> m (ApiResponse [Bird])
+processSpeciesSearch (SearchRequest region familySciName) = do
+  withFamily (familySciName, _fScientificName) (fmap ApiResponse . getSpeciesByRegionFamily region)
+
+processImageSearch
+  :: (MonadReader r m, HasFlickrConf r, MonadIO m)
+  => [Bird] -> m (ApiResponse SearchResult)
+processImageSearch birds = do
+  ApiResponse <$> getImagesBySpecies birds
+
+newtype GetFamilyScientificNameRequest
+  = GetFamilyScientificNameRequest { _gfsnrName :: CommonName }
+  deriving (Show, Eq, Generic)
+
+instance J.FromJSON GetFamilyScientificNameRequest where
+  parseJSON = J.genericParseJSON (J.aesonDrop (T.length "_gfsnr") J.snakeCase)
+
+newtype GetFamilyScientificNameResponse
+  = GetFamilyScientificNameResponse { _gfsnrFamilies :: [Family] }
+  deriving (Show, Eq, Generic)
+
+instance J.ToJSON GetFamilyScientificNameResponse where
+  toJSON = J.genericToJSON (J.aesonDrop (T.length "_gfsnr") J.snakeCase)
+
+getFamilyScientificName
+  :: ( MonadIO m
+     , MonadReader r m
+     , HasDbConfig r
+     , HasEBirdConf r
+     , HasFlickrConf r
+     , HasAppCtx r
+     , MonadError e m
+     , AsEbirdError e
+     )
+  => GetFamilyScientificNameRequest -> m (ApiResponse GetFamilyScientificNameResponse)
+getFamilyScientificName (GetFamilyScientificNameRequest commonName) = do
   fams <- asks (^. axBirdFamiliesCache)
-  let found = find (\f -> _fScientificName f == familySciName) (unFamiliesCache fams)
+  let isSubStr v1 v2 = T.isInfixOf (T.toLower $ uCommonName v1) (T.toLower $ uCommonName v2)
+      found = filter (isSubStr commonName . _fCommonName) (unFamiliesCache fams)
+  pure $ ApiResponse $ GetFamilyScientificNameResponse found
+
+withFamily
+  :: (MonadReader r m, HasAppCtx r, MonadError e m, AsEbirdError e, Eq b)
+  => (b, Family -> b) -> (Family -> m a) -> m a
+withFamily (val, selector) action = do
+  fams <- asks (^. axBirdFamiliesCache)
+  let found = find (\f -> selector f == val) (unFamiliesCache fams)
   case found of
-    Nothing     -> throwError $ (_EbirdErrorSearch #) "Invalid family"
-    Just family -> SearchResponse <$> getCorpus region family
+    Nothing     -> throwError $ _EbirdErrorSearch # "Invalid family"
+    Just family -> action family
 
 getFamilies
   :: ( MonadIO m
@@ -54,7 +114,7 @@ getFamilies
      )
   => m FamilyNames
 getFamilies =
-  asks (^. axBirdFamiliesCache) >>= pure . unFamiliesCache
+  asks (^. axBirdFamiliesCache) <&> unFamiliesCache
 
 getRegions
   :: ( MonadIO m
@@ -63,4 +123,4 @@ getRegions
      )
   => m RegionNames
 getRegions =
-  asks (^. axRegionsCache) >>= pure . unRegionsCache
+  asks (^. axRegionsCache) <&> unRegionsCache

@@ -50,13 +50,13 @@ getRegionNames = do
 
 -- | Given a 'Family' name, fetch a list of species belonging to that family. This is fetched from
 -- our database, which contains the entire taxonomy for now
-getSpecies
+getAllSpecies
   :: ( MonadIO m
      , MonadReader r m
      , HasDbConfig r
      )
   => Family -> m [SpeciesCode]
-getSpecies (Family _scName family) = do
+getAllSpecies (Family _scName family) = do
   conn <- asks (^. dbConnection)
   let q = "SELECT species_code FROM taxonomy WHERE family_common_name = ?"
   res <- liftIO $ PG.query conn q (PG.Only $ uCommonName family)

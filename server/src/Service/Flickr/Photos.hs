@@ -1,5 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 module Service.Flickr.Photos where
 
@@ -23,7 +25,7 @@ $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''FlickrPhotoResponse)
 
 newtype FlickrResponse
   = FlickrResponse { unFlickrResponse :: [FlickrPhotoResponse] }
-  deriving (Show, Eq)
+  deriving stock (Show, Eq)
 
 instance J.FromJSON FlickrResponse where
   parseJSON (J.Object r) = do
@@ -35,7 +37,7 @@ instance J.FromJSON FlickrResponse where
 
 searchPhotos :: Text -> Text -> IO [Text]
 searchPhotos apiKey term = do
-  -- | the API to be called:
+  -- the API to be called:
   -- "https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&api_key=<apiKey>&text=<name>"
   resp <- liftIO $ W.getWith (opts apiKey) "https://api.flickr.com/services/rest/"
   let res = resp ^. W.responseBody

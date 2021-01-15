@@ -37,6 +37,11 @@ httpApp config = liftIO $ Spock.spockT id $ do
   -- API which handles the family/region search
   Spock.post "api/v1/search" $ httpPostHandler config processSearch
 
+  Spock.post "api/v1/search/species" $ httpPostHandler config processSpeciesSearch
+  Spock.post "api/v1/search/images" $ httpPostHandler config processImageSearch
+
+  Spock.post "api/v1/family/scientific-name" $ httpPostHandler config getFamilyScientificName
+
 
 newtype AppM a
   = AppM { unAppM :: ReaderT AppCtx (ExceptT AppError IO) a }

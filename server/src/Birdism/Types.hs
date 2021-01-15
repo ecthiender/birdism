@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Birdism.Types where
 
@@ -54,13 +55,19 @@ newtype RegionName
 -- | A particular species; maybe in future change the name to `Species`
 data Bird
   = Bird
-  { bScName        :: !ScientificName
-  , bComName       :: !CommonName
-  , bSpCode        :: !SpeciesCode
-  , bCategory      :: !(Maybe Text)
-  , bOrder         :: !(Maybe Text)
-  , bFamilyComName :: !CommonName
-  } deriving (Show, Eq)
+  { bScientificName   :: !ScientificName
+  , bCommonName       :: !CommonName
+  , bSpeciesCode      :: !SpeciesCode
+  , bCategory         :: !(Maybe Text)
+  , bOrder            :: !(Maybe Text)
+  , bFamilyCommonName :: !CommonName
+  } deriving (Show, Eq, Generic)
+
+instance J.ToJSON Bird where
+  toJSON = J.genericToJSON (J.aesonDrop 1 J.snakeCase)
+
+instance J.FromJSON Bird where
+  parseJSON = J.genericParseJSON (J.aesonDrop 1 J.snakeCase)
 
 makeBird :: SpeciesCode -> CommonName -> ScientificName -> Family -> Bird
 makeBird spCode comName sciName family =
