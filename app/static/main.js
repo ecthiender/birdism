@@ -69,12 +69,17 @@ class SearchForm {
       this.current.matchingFamily = [];
       return;
     }
-    const results = app.familyNames.filter(n => n.common_name.toLowerCase().indexOf(term) >= 0)
-          .map(n => { return {
-            elem: m(FamilyName, {...n}),
-            key: n.scientific_name,
-            text: n.common_name + " (" + n.scientific_name + ")"
-          }; });
+    const results = app.familyNames
+      .filter(
+        (n) => n.common_name.toLowerCase().indexOf(term.toLowerCase()) >= 0
+      )
+      .map((n) => {
+        return {
+          elem: m(FamilyName, { ...n }),
+          key: n.scientific_name,
+          text: n.common_name + " (" + n.scientific_name + ")",
+        };
+      });
     // console.log('auto complete res', results);
     this.current.matchingFamily = results;
   }
@@ -84,8 +89,17 @@ class SearchForm {
       this.current.matchingRegion = [];
       return;
     }
-    const results = app.regions.filter(n => n.region_name.toLowerCase().indexOf(term) >= 0)
-          .map(n => { return {elem: m("span", n.region_name), key: n.region_code, text: n.region_name}; });
+    const results = app.regions
+      .filter(
+        (n) => n.region_name.toLowerCase().indexOf(term.toLowerCase()) >= 0
+      )
+      .map((n) => {
+        return {
+          elem: m("span", n.region_name),
+          key: n.region_code,
+          text: n.region_name,
+        };
+      });
     // console.log('auto complete res', results);
     this.current.matchingRegion = results;
   }
