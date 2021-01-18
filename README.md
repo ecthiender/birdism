@@ -1,9 +1,9 @@
 # Birdism
 
-Portal for helping bird identification and much more. This application helps in narrowing down
+Portal for helping bird identification and more. This application helps in narrowing down
 identification of a bird. 
 
-Often is the case when you have identified the family of the bird, but is unable to conclusively
+Often is the case when you have identified the family of the bird, but unable to conclusively
 identify the exact species. In that case, you frantically search for different species of that
 family and looking at their photographs.
 
@@ -14,10 +14,9 @@ application will list all the species of that family available in that region,
 with multiple photographs. Helping you to identify your bird.
 
 # How it works
-This application uses the taxonomy database from ebird, and its checklist API to
-find out all the species (of a family) in a particular region from last 30 days
-of observation. Then it takes those common species name, and does a Flickr
-search for photos, and displays them to you!
+This application uses the eBird API to fetch species list of a region, and its
+taxonomy database to filter based on the family. Then it takes those common name
+of those species and does a Flickr search for photos, and displays them to you!
 
 # Development
 The backend is in Haskell (code resides in the `server` directory).
