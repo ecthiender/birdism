@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
 
 module Birdism.Types where
 
@@ -23,7 +22,7 @@ newtype ScientificName
 newtype CommonName
   = CommonName { uCommonName :: Text }
   deriving stock (Show, Eq, Generic)
-  deriving newtype ( Hashable, J.FromJSONKey, J.ToJSONKey, J.FromJSON, J.ToJSON, PG.ToField, PG.FromField)
+  deriving newtype (Hashable, J.FromJSONKey, J.ToJSONKey, J.FromJSON, J.ToJSON, PG.ToField, PG.FromField)
 
 newtype SpeciesCode
   = SpeciesCode { uSpeciesCode :: Text }
@@ -37,10 +36,10 @@ data Family
   } deriving (Show, Eq, Generic)
 
 instance J.ToJSON Family where
-  toJSON = J.genericToJSON (J.aesonDrop 2 J.snakeCase)
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 instance J.FromJSON Family where
-  parseJSON = J.genericParseJSON (J.aesonDrop 2 J.snakeCase)
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 newtype RegionCode
   = RegionCode { uRegionCode :: Text }
@@ -64,10 +63,10 @@ data Bird
   } deriving (Show, Eq, Generic)
 
 instance J.ToJSON Bird where
-  toJSON = J.genericToJSON (J.aesonDrop 1 J.snakeCase)
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 instance J.FromJSON Bird where
-  parseJSON = J.genericParseJSON (J.aesonDrop 1 J.snakeCase)
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 makeBird :: SpeciesCode -> CommonName -> ScientificName -> Family -> Bird
 makeBird spCode comName sciName family =
@@ -81,10 +80,10 @@ data Region
   } deriving (Show, Eq, Generic)
 
 instance J.ToJSON Region where
-  toJSON = J.genericToJSON (J.aesonDrop 2 J.snakeCase)
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 instance J.FromJSON Region where
-  parseJSON = J.genericParseJSON (J.aesonDrop 2 J.snakeCase)
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 data Checklist
   = Checklist

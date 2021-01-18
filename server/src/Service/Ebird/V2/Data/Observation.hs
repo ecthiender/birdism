@@ -27,10 +27,10 @@ data ChecklistObservation
   } deriving (Show, Eq, Generic)
 
 instance J.ToJSON ChecklistObservation where
-  toJSON = J.genericToJSON (J.aesonDrop 3 J.snakeCase)
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 instance J.FromJSON ChecklistObservation where
-  parseJSON = J.genericParseJSON (J.aesonDrop 3 J.snakeCase)
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 searchCheckLists
   :: ( MonadReader r m

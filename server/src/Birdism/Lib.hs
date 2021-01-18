@@ -39,7 +39,7 @@ data SearchResultItem
   { _srrCommonName :: !CommonName
   , _srrImageUrls  :: ![ImgUrl]
   } deriving (Show, Eq)
-$(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchResultItem)
+$(J.deriveJSON (J.aesonPrefix J.snakeCase) ''SearchResultItem)
 
 type SearchResult = [SearchResultItem]
 
