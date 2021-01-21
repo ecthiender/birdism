@@ -21,7 +21,7 @@ data FlickrPhotoResponse
   , _fprOwner  :: !Text
   } deriving (Show, Eq)
 
-$(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''FlickrPhotoResponse)
+$(J.deriveJSON (J.aesonPrefix J.snakeCase) ''FlickrPhotoResponse)
 
 newtype FlickrResponse
   = FlickrResponse { unFlickrResponse :: [FlickrPhotoResponse] }

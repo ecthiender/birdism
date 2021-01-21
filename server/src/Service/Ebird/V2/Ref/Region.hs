@@ -39,7 +39,7 @@ data RRegion a
   , _rName :: !Text
   } deriving (Show, Eq)
 
-$(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''RRegion)
+$(J.deriveJSON (J.aesonPrefix J.snakeCase) ''RRegion)
 
 data SubRegion
   = SubRegion
@@ -47,7 +47,7 @@ data SubRegion
   , _srName :: !Text
   } deriving (Show, Eq)
 
-$(J.deriveJSON (J.aesonDrop 3 J.snakeCase) ''SubRegion)
+$(J.deriveJSON (J.aesonPrefix J.snakeCase) ''SubRegion)
 
 newtype SubRegions
   = SubRegions { unSubRegions :: [RRegion Subnational2] }

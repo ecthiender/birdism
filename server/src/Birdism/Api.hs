@@ -21,7 +21,7 @@ import qualified Data.Text         as T
 newtype ApiResponse a
   = ApiResponse { _arpResult :: a }
   deriving (Show, Eq)
-$(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''ApiResponse)
+$(J.deriveJSON (J.aesonPrefix J.snakeCase) ''ApiResponse)
 
 
 data SearchRequest
@@ -30,7 +30,7 @@ data SearchRequest
   , _srqFamily :: !ScientificName
   -- ^ 'ScientificName' of the family
   } deriving (Show, Eq)
-$(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''SearchRequest)
+$(J.deriveJSON (J.aesonPrefix J.snakeCase) ''SearchRequest)
 
 processSearch
   :: ( MonadIO m
@@ -71,14 +71,14 @@ newtype GetFamilyScientificNameRequest
   deriving (Show, Eq, Generic)
 
 instance J.FromJSON GetFamilyScientificNameRequest where
-  parseJSON = J.genericParseJSON (J.aesonDrop (T.length "_gfsnr") J.snakeCase)
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 newtype GetFamilyScientificNameResponse
   = GetFamilyScientificNameResponse { _gfsnrFamilies :: [Family] }
   deriving (Show, Eq, Generic)
 
 instance J.ToJSON GetFamilyScientificNameResponse where
-  toJSON = J.genericToJSON (J.aesonDrop (T.length "_gfsnr") J.snakeCase)
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 getFamilyScientificName
   :: ( MonadIO m

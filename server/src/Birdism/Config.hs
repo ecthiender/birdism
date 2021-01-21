@@ -44,12 +44,11 @@ data EBirdConf
 
 makeClassy ''EBirdConf
 
--- $(J.deriveJSON (J.aesonDrop 4 J.snakeCase) ''EBirdConf)
 instance J.ToJSON EBirdConf where
-  toJSON = J.genericToJSON (J.aesonDrop 4 J.snakeCase)
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 instance J.FromJSON EBirdConf where
-  parseJSON = J.genericParseJSON (J.aesonDrop 4 J.snakeCase)
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 data FlickrConf
   = FlickrConf
@@ -58,12 +57,10 @@ data FlickrConf
   } deriving (Show, Eq, Generic)
 
 instance J.ToJSON FlickrConf where
-  toJSON = J.genericToJSON (J.aesonDrop 3 J.snakeCase)
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 instance J.FromJSON FlickrConf where
-  parseJSON = J.genericParseJSON (J.aesonDrop 3 J.snakeCase)
-
--- $(J.deriveJSON (J.aesonDrop 3 J.snakeCase) ''FlickrConf)
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 makeClassy ''FlickrConf
 
@@ -77,12 +74,10 @@ data AppConfig
   } deriving (Show, Eq, Generic)
 
 instance J.ToJSON AppConfig where
-  toJSON = J.genericToJSON (J.aesonDrop 2 J.snakeCase)
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 instance J.FromJSON AppConfig where
-  parseJSON = J.genericParseJSON (J.aesonDrop 2 J.snakeCase)
-
--- $(J.deriveJSON (J.aesonDrop 2 J.snakeCase) ''AppConfig)
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 data DbConfig
   = DbConfig
