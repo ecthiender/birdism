@@ -1,5 +1,11 @@
 # Changelog for birdism
 
+## v0.2.2
+
+### Fixes
+- improve flickr search (#12)
+- chore: switch from aesonDrop to aesonPrefix function (#10)
+
 ## v0.2.1
 
 ### Fixes
