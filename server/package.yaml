@@ -51,6 +51,7 @@ dependencies:
 # for our http webserver
 - servant
 - servant-server
+- servant-docs
 - Spock-core
 - http-types
 - wai
@@ -69,6 +70,7 @@ dependencies:
 # - extra
 - say
 - retry
+- directory
 
 library:
   source-dirs: src

@@ -1,9 +1,10 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Birdism.Api where
 
@@ -21,7 +22,7 @@ import           Birdism.Types
 
 
 type BirdismHttpAPIF f
-  =    "api" :> "ping" :> Get '[PlainText] Text
+  =    "api" :> "ping" :> Get '[PlainText] Pong
   -- the v1 API
   :<|> "api" :> "v1" :> "regions" :> Get '[JSON] RegionNames
 
@@ -55,8 +56,19 @@ birdismApiServer
 serverProxy :: Proxy BirdismHttpAPI
 serverProxy = Proxy
 
-pingApiHandler :: Monad m => m Text
-pingApiHandler = pure "pong"
+data Pong = Pong
+
+instance Show Pong where
+  show _ = "pong"
+
+instance J.ToJSON Pong where
+  toJSON _ = "pong"
+
+instance MimeRender PlainText Pong where
+  mimeRender _ _ = "pong"
+
+pingApiHandler :: Monad m => m Pong
+pingApiHandler = pure Pong
 
 newtype ApiResponse a
   = ApiResponse { _arpResult :: a }
@@ -74,6 +86,9 @@ data SearchRequest
 
 instance J.FromJSON SearchRequest where
   parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
+
+instance J.ToJSON SearchRequest where
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 processSearch
   :: ( MonadIO m
@@ -118,6 +133,9 @@ newtype FamilyScientificNameRequest
 
 instance J.FromJSON FamilyScientificNameRequest where
   parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
+
+instance J.ToJSON FamilyScientificNameRequest where
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 newtype FamilyScientificNameResponse
   = FamilyScientificNameResponse { _gfsnrFamilies :: [Family] }

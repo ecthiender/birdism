@@ -11,6 +11,7 @@ module Birdism.Lib
   , Family
   , Region (..)
   , SearchResult
+  , SearchResultItem (..)
   , CommonName
   , ImgUrl
   ) where

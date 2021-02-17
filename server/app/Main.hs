@@ -13,6 +13,7 @@ import qualified System.Environment         as Sys
 
 import           Birdism.Common
 import           Birdism.Config
+import           Birdism.Docs               (generateDocs)
 import           Birdism.Init
 import           Birdism.Server
 import           Worker.PopulateRegion
@@ -23,6 +24,7 @@ main = do
   args <- Sys.getArgs
   case args of
     ("serve":_)       -> runServer
+    ("docs":_)        -> generateDocs
     ("seed-taxa":_)   -> seed populateTaxonomy
     ("seed-region":_) -> seed populateRegion
     ("help":_)        -> printUsage
