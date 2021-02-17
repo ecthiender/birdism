@@ -20,16 +20,22 @@ import           Birdism.Lib
 import           Birdism.Types
 
 
-type BirdismHttpAPI
+type BirdismHttpAPIF f
   =    "api" :> "ping" :> Get '[PlainText] Text
   -- the v1 API
   :<|> "api" :> "v1" :> "regions" :> Get '[JSON] RegionNames
-  :<|> "api" :> "v1" :> "families" :> Get '[JSON] FamilyNames
-  :<|> "api" :> "v1" :> "family" :> "scientific-name" :> ReqBody '[JSON] GetFamilyScientificNameRequest :> Post '[JSON] GetFamilyScientificNameResponse
-  :<|> "api" :> "v1" :> "search" :> ReqBody '[JSON] SearchRequest :> Post '[JSON] SearchResult
-  :<|> "api" :> "v1" :> "search" :> "species" :> ReqBody '[JSON] SearchRequest :> Post '[JSON] [Bird]
-  :<|> "api" :> "v1" :> "search" :> "images" :> ReqBody '[JSON] [Bird] :> Post '[JSON] SearchResult
 
+  :<|> "api" :> "v1" :> "families" :> Get '[JSON] FamilyNames
+  :<|> "api" :> "v1" :> "family" :> "scientific-name"
+        :> ReqBody '[JSON] FamilyScientificNameRequest
+        :> Post '[JSON] (f FamilyScientificNameResponse)
+
+  :<|> "api" :> "v1" :> "search" :> ReqBody '[JSON] SearchRequest :> Post '[JSON] (f SearchResult)
+  :<|> "api" :> "v1" :> "search" :> "species" :> ReqBody '[JSON] SearchRequest :> Post '[JSON] (f [Bird])
+  :<|> "api" :> "v1" :> "search" :> "images" :> ReqBody '[JSON] [Bird] :> Post '[JSON] (f SearchResult)
+
+
+type BirdismHttpAPI = BirdismHttpAPIF ApiResponse
 
 -- | The HTTP server implementing the above API
 birdismApiServer
@@ -39,10 +45,12 @@ birdismApiServer
      = pingApiHandler
   :<|> getRegions
   :<|> getFamilies
-  :<|> getFamilyScientificName
-  :<|> processSearch
-  :<|> processSpeciesSearch
-  :<|> processImageSearch
+  :<|> withApiResponse getFamilyScientificName
+  :<|> withApiResponse processSearch
+  :<|> withApiResponse processSpeciesSearch
+  :<|> withApiResponse processImageSearch
+  where
+    withApiResponse f = fmap ApiResponse . f
 
 serverProxy :: Proxy BirdismHttpAPI
 serverProxy = Proxy
@@ -104,18 +112,18 @@ processImageSearch
   => [Bird] -> m SearchResult
 processImageSearch = getImagesBySpecies
 
-newtype GetFamilyScientificNameRequest
-  = GetFamilyScientificNameRequest { _gfsnrName :: CommonName }
+newtype FamilyScientificNameRequest
+  = FamilyScientificNameRequest { _gfsnrName :: CommonName }
   deriving (Show, Eq, Generic)
 
-instance J.FromJSON GetFamilyScientificNameRequest where
+instance J.FromJSON FamilyScientificNameRequest where
   parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
-newtype GetFamilyScientificNameResponse
-  = GetFamilyScientificNameResponse { _gfsnrFamilies :: [Family] }
+newtype FamilyScientificNameResponse
+  = FamilyScientificNameResponse { _gfsnrFamilies :: [Family] }
   deriving (Show, Eq, Generic)
 
-instance J.ToJSON GetFamilyScientificNameResponse where
+instance J.ToJSON FamilyScientificNameResponse where
   toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 getFamilyScientificName
@@ -128,12 +136,12 @@ getFamilyScientificName
      , MonadError e m
      , AsEbirdError e
      )
-  => GetFamilyScientificNameRequest -> m GetFamilyScientificNameResponse
-getFamilyScientificName (GetFamilyScientificNameRequest commonName) = do
+  => FamilyScientificNameRequest -> m FamilyScientificNameResponse
+getFamilyScientificName (FamilyScientificNameRequest commonName) = do
   fams <- asks (^. axBirdFamiliesCache)
   let isSubStr v1 v2 = T.isInfixOf (T.toLower $ uCommonName v1) (T.toLower $ uCommonName v2)
       found = filter (isSubStr commonName . _fCommonName) (unFamiliesCache fams)
-  pure $ GetFamilyScientificNameResponse found
+  pure $ FamilyScientificNameResponse found
 
 validateRegion
   :: (MonadReader s m, HasAppCtx s, MonadError e m, AsEbirdError e)

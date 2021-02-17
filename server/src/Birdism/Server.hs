@@ -6,8 +6,8 @@ module Birdism.Server where
 
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import           Network.Wai.Middleware.RequestLogger
-import           Network.Wai.Middleware.Static
+import           Network.Wai.Middleware.RequestLogger (logStdoutDev)
+import           Network.Wai.Middleware.Static        (addBase, staticPolicy)
 
 import qualified Data.Aeson                           as J
 import qualified Network.HTTP.Types.Status            as HTTP
@@ -27,8 +27,10 @@ runAppM :: AppM a -> AppCtx -> IO (Either AppError a)
 runAppM app = runExceptT . runReaderT (unAppM app)
 
 httpApp :: AppCtx -> Wai.Application
-httpApp ctx = serve serverProxy $
-  hoistServer serverProxy (appMToServantHandler ctx) birdismApiServer
+httpApp ctx =
+  logStdoutDev
+  $ staticPolicy (addBase "../app/")
+  $ serve serverProxy $ hoistServer serverProxy (appMToServantHandler ctx) birdismApiServer
 
 appMToServantHandler :: AppCtx -> AppM a -> Handler a
 appMToServantHandler ctx service =
