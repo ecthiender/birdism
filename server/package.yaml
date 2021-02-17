@@ -52,7 +52,6 @@ dependencies:
 - servant
 - servant-server
 - servant-docs
-- Spock-core
 - http-types
 - wai
 - wai-middleware-static

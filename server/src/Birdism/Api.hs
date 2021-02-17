@@ -1,15 +1,18 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeOperators              #-}
 
 module Birdism.Api where
 
 import           Control.Lens
 import           Servant
+
 
 import qualified Data.Aeson        as J
 import qualified Data.Aeson.Casing as J
@@ -19,10 +22,12 @@ import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Lib
 import           Birdism.Types
+import           GHC.TypeLits      (Nat)
 
 
 type BirdismHttpAPIF f
-  =    "api" :> "ping" :> Get '[PlainText] Pong
+  =    GetRedirect 302 RedirectLocation
+  :<|> "api" :> "ping" :> Get '[PlainText] Pong
   -- the v1 API
   :<|> "api" :> "v1" :> "regions" :> Get '[JSON] RegionNames
 
@@ -43,7 +48,8 @@ birdismApiServer
   :: (MonadError AppError m, MonadReader AppCtx m, MonadIO m)
   => ServerT BirdismHttpAPI m
 birdismApiServer
-     = pingApiHandler
+     = redirect (RedirectLocation "/index.html")
+  :<|> pingApiHandler
   :<|> getRegions
   :<|> getFamilies
   :<|> withApiResponse getFamilyScientificName
@@ -198,3 +204,18 @@ getRegions
   => m RegionNames
 getRegions =
   asks (^. axRegionsCache) <&> unRegionsCache
+
+
+-- * Internal Servant extensions
+
+type GetRedirect (code :: Nat) loc
+  = Verb 'GET code '[PlainText, JSON] (Headers '[Header "Location" loc] NoContent)
+
+redirect
+  :: (Monad m, ToHttpApiData loc)
+  => loc -- ^ what to put in the 'Location' header
+  -> m (Headers '[Header "Location" loc] NoContent)
+redirect a = return (addHeader a NoContent)
+
+newtype RedirectLocation = RedirectLocation Text
+  deriving (Show, ToHttpApiData)

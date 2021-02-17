@@ -85,6 +85,9 @@ bluefacedMalkoha = Bird
 instance ToSample Bird where
   toSamples _ = samples [barnOwl, bluefacedMalkoha]
 
+instance ToSample RedirectLocation where
+  toSamples _ = singleSample $ RedirectLocation "/index.html"
+
 apiDocs :: API
 apiDocs = docs (pretty serverProxy)
 

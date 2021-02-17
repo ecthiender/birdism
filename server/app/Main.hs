@@ -4,7 +4,6 @@
 module Main where
 
 import           System.Exit                (exitFailure)
-import           Web.Spock.Core
 
 import qualified Data.Aeson                 as J
 import qualified Data.ByteString.Lazy.Char8 as BL
@@ -30,13 +29,6 @@ main = do
     ("help":_)        -> printUsage
     ("--help":_)      -> printUsage
     _                 -> putStrLn "Invalid command." >> printUsage >> exitFailure
-
-runServer' :: IO ()
-runServer' = do
-  res <- runExceptT $ readConfig >>= initialiseAppCtx
-  case res of
-    Left e    -> printExit $ J.encode e
-    Right ctx -> liftIO $ runSpock (_axServerPort ctx) $ oldhttpApp ctx
 
 runServer :: IO ()
 runServer = do
