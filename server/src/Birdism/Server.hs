@@ -17,8 +17,38 @@ import qualified Web.Spock.Core                       as Spock
 import           Birdism.Api
 import           Birdism.Config
 
-httpApp :: MonadIO m => AppCtx -> m Wai.Middleware
-httpApp config = liftIO $ Spock.spockT id $ do
+import           Servant
+
+newtype AppM a
+  = AppM { unAppM :: ReaderT AppCtx (ExceptT AppError IO) a }
+  deriving (Functor, Applicative, Monad, MonadReader AppCtx, MonadError AppError, MonadIO)
+
+runAppM :: AppM a -> AppCtx -> IO (Either AppError a)
+runAppM app = runExceptT . runReaderT (unAppM app)
+
+httpApp :: AppCtx -> Wai.Application
+httpApp ctx = serve serverProxy $
+  hoistServer serverProxy (appMToServantHandler ctx) birdismApiServer
+
+appMToServantHandler :: AppCtx -> AppM a -> Handler a
+appMToServantHandler ctx service =
+  liftIO (runAppM service ctx) >>= either (throwError . toServerError) return
+  where
+    toServerError e =
+      let resp = toHttpResp e
+      in resp { errBody = J.encode e, errHeaders = [jsonHeader] }
+    toHttpResp = \case
+      AEEbirdError ebErr -> case ebErr of
+        EbirdErrorSearch _        -> err400
+        EbirdErrorParseResponse _ -> err400
+        EbirdErrorUnexpected _    -> err500
+      AEDbError _     -> err500
+      AEConfigError _ -> err400
+    jsonHeader = ("Content-Type", "application/json;charset=utf-8")
+
+
+oldhttpApp :: MonadIO m => AppCtx -> m Wai.Middleware
+oldhttpApp config = liftIO $ Spock.spockT id $ do
   Spock.middleware $ logStdoutDev
   Spock.middleware $ staticPolicy (addBase "../app/")
 
@@ -41,14 +71,6 @@ httpApp config = liftIO $ Spock.spockT id $ do
   Spock.post "api/v1/search/images" $ httpPostHandler config processImageSearch
 
   Spock.post "api/v1/family/scientific-name" $ httpPostHandler config getFamilyScientificName
-
-
-newtype AppM a
-  = AppM { unAppM :: ReaderT AppCtx (ExceptT AppError IO) a }
-  deriving (Functor, Applicative, Monad, MonadReader AppCtx, MonadError AppError, MonadIO)
-
-runAppM :: AppM a -> AppCtx -> IO (Either AppError a)
-runAppM app = runExceptT . runReaderT (unAppM app)
 
 httpGetHandler :: J.ToJSON a => AppCtx -> AppM a -> Spock.ActionCtxT () IO ()
 httpGetHandler config (AppM service) = do

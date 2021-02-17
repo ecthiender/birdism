@@ -5,6 +5,8 @@ module Birdism.Common
   , debugTrace
   , tshow
   , sleep
+  , txtToBS
+  , txtToLBS
   )
   where
 
@@ -45,7 +47,10 @@ import           Prelude                     as M hiding (fail, init, lookup)
 import           Text.Read                   as M (readEither, readMaybe)
 
 import qualified Control.Concurrent          as Conc
+import qualified Data.ByteString             as B
+import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Text                   as T
+import qualified Data.Text.Encoding          as TE
 
 debugTrace :: (MonadIO m, Show a) => Maybe String -> a -> m ()
 debugTrace prefix actual =
@@ -56,3 +61,9 @@ tshow = T.pack . show
 
 sleep :: MonadIO m => Int -> m ()
 sleep seconds = liftIO $ Conc.threadDelay (1000 * 1000 * seconds)
+
+txtToBS :: Text -> B.ByteString
+txtToBS = TE.encodeUtf8
+
+txtToLBS :: Text -> BL.ByteString
+txtToLBS = BL.fromStrict . TE.encodeUtf8

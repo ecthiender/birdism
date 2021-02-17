@@ -8,6 +8,7 @@ import           Web.Spock.Core
 
 import qualified Data.Aeson                 as J
 import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Network.Wai.Handler.Warp   as Warp
 import qualified System.Environment         as Sys
 
 import           Birdism.Common
@@ -28,12 +29,19 @@ main = do
     ("--help":_)      -> printUsage
     _                 -> putStrLn "Invalid command." >> printUsage >> exitFailure
 
+runServer' :: IO ()
+runServer' = do
+  res <- runExceptT $ readConfig >>= initialiseAppCtx
+  case res of
+    Left e    -> printExit $ J.encode e
+    Right ctx -> liftIO $ runSpock (_axServerPort ctx) $ oldhttpApp ctx
+
 runServer :: IO ()
 runServer = do
   res <- runExceptT $ readConfig >>= initialiseAppCtx
   case res of
     Left e    -> printExit $ J.encode e
-    Right ctx -> liftIO $ runSpock (_axServerPort ctx) $ httpApp ctx
+    Right ctx -> liftIO $ Warp.run (_axServerPort ctx) $ httpApp ctx
 
 seed :: (AppConfig -> IO ()) -> IO ()
 seed fn = do

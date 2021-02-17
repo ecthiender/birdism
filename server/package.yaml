@@ -49,11 +49,14 @@ dependencies:
 - time
 
 # for our http webserver
+- servant
+- servant-server
 - Spock-core
 - http-types
 - wai
 - wai-middleware-static
 - wai-extra
+- warp
 
 # async concurrency
 - async

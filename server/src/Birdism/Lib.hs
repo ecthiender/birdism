@@ -52,12 +52,12 @@ getSpeciesByRegionFamily
      , HasFlickrConf r
      , AsEbirdError e
      )
-  => RegionCode -> Family -> m [Bird]
-getSpeciesByRegionFamily regCode family = do
+  => Region -> Family -> m [Bird]
+getSpeciesByRegionFamily region family = do
   -- get all species that belongs to the family
   allSpecies <- Data.getAllSpecies family
   -- get all the available species in the region
-  foundSpecies <- ServiceEbird.getSpeciesListByRegion regCode
+  foundSpecies <- ServiceEbird.getSpeciesListByRegion (_rRegionCode region)
   matchedSpecies <- traverse Data.makeBirdFromCode $ filter (`elem` allSpecies) foundSpecies
   pure $ catMaybes matchedSpecies
 
@@ -75,9 +75,9 @@ getCorpus
      , HasFlickrConf r
      , AsEbirdError e
      )
-  => RegionCode -> Family -> m SearchResult
-getCorpus regCode family = do
-  matchedSpecies <- getSpeciesByRegionFamily regCode family
+  => Region -> Family -> m SearchResult
+getCorpus region family = do
+  matchedSpecies <- getSpeciesByRegionFamily region family
   getImages matchedSpecies
 
 -- Given a list of 'Bird's, get the final search result, by combining the common names and a list
