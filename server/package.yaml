@@ -49,11 +49,14 @@ dependencies:
 - time
 
 # for our http webserver
-- Spock-core
+- servant
+- servant-server
+- servant-docs
 - http-types
 - wai
 - wai-middleware-static
 - wai-extra
+- warp
 
 # async concurrency
 - async
@@ -66,6 +69,7 @@ dependencies:
 # - extra
 - say
 - retry
+- directory
 
 library:
   source-dirs: src

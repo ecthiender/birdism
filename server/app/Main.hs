@@ -4,14 +4,15 @@
 module Main where
 
 import           System.Exit                (exitFailure)
-import           Web.Spock.Core
 
 import qualified Data.Aeson                 as J
 import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Network.Wai.Handler.Warp   as Warp
 import qualified System.Environment         as Sys
 
 import           Birdism.Common
 import           Birdism.Config
+import           Birdism.Docs               (generateDocs)
 import           Birdism.Init
 import           Birdism.Server
 import           Worker.PopulateRegion
@@ -22,6 +23,7 @@ main = do
   args <- Sys.getArgs
   case args of
     ("serve":_)       -> runServer
+    ("docs":_)        -> generateDocs
     ("seed-taxa":_)   -> seed populateTaxonomy
     ("seed-region":_) -> seed populateRegion
     ("help":_)        -> printUsage
@@ -33,7 +35,7 @@ runServer = do
   res <- runExceptT $ readConfig >>= initialiseAppCtx
   case res of
     Left e    -> printExit $ J.encode e
-    Right ctx -> liftIO $ runSpock (_axServerPort ctx) $ httpApp ctx
+    Right ctx -> liftIO $ Warp.run (_axServerPort ctx) $ httpApp ctx
 
 seed :: (AppConfig -> IO ()) -> IO ()
 seed fn = do

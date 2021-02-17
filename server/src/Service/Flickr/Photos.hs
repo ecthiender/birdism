@@ -41,8 +41,6 @@ searchPhotos apiKey term = do
   -- "https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&api_key=<apiKey>&text=<name>"
   resp <- liftIO $ W.getWith (opts apiKey) "https://api.flickr.com/services/rest/"
   let res = resp ^. W.responseBody
-  -- liftIO $ putStrLn "=======> FLICKR RESPONSE ===================>>>>>>> "
-  -- liftIO $ print $ resp ^. W.responseBody
   case J.eitherDecode res of
     Right photos -> return $ map _fprUrlM $ unFlickrResponse photos
     Left e       -> do
