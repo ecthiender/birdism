@@ -1,6 +1,4 @@
 -- |
-{-# LANGUAGE DeriveGeneric #-}
-
 module Service.Ebird.V2.Data.Observation
   ( searchCheckLists
   , ChecklistObservation(..)

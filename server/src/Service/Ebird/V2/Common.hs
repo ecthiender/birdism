@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
 module Service.Ebird.V2.Common where
 
 import           Control.Lens

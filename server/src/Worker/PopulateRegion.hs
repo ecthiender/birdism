@@ -1,8 +1,3 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Worker.PopulateRegion where
 
 import           Control.Lens
@@ -31,7 +26,7 @@ populateRegion config = do
   countries <- runWithRetry getCountries _axEbirdConf
 
   -- Step 4.1: insert the countries into db
-  insertRegions (_dbConnection $ _axDbConn) countries
+  insertRegions (_dbConnection _axDbConn) countries
 
   -- ~~Step 4.1: concurrently, get subnationals-1 of each country~~
   -- Step 5: get subnationals1 syncly

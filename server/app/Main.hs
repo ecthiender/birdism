@@ -22,32 +22,32 @@ main :: IO ()
 main = do
   args <- Sys.getArgs
   case args of
-    ("serve":_)       -> runServer
-    ("docs":_)        -> generateDocs
-    ("seed-taxa":_)   -> seed populateTaxonomy
-    ("seed-region":_) -> seed populateRegion
-    ("help":_)        -> printUsage
-    ("--help":_)      -> printUsage
-    _                 -> putStrLn "Invalid command." >> printUsage >> exitFailure
+    ["serve"]       -> runServer
+    ["docs"]        -> generateDocs
+    ["seed-taxa"]   -> runWorker populateTaxonomy
+    ["seed-region"] -> runWorker populateRegion
+    ["help"]        -> printUsage
+    ["--help"]      -> printUsage
+    _               -> putStrLn "Invalid command." >> printUsage >> exitFailure
 
 runServer :: IO ()
 runServer = do
   res <- runExceptT $ readConfig >>= initialiseAppCtx
   case res of
-    Left e    -> printExit $ J.encode e
+    Left e    -> exitWithError $ J.encode e
     Right ctx -> liftIO $ Warp.run (_axServerPort ctx) $ httpApp ctx
 
-seed :: (AppConfig -> IO ()) -> IO ()
-seed fn = do
+runWorker :: (AppConfig -> IO ()) -> IO ()
+runWorker fn = do
   res <- runExceptT readConfig
   case res of
-    Left e     -> printExit $ J.encode e
+    Left e     -> exitWithError $ J.encode e
     Right conf -> fn conf
 
 printUsage :: IO ()
 printUsage = do
   putStrLn "Usage:"
-  putStrLn "birdsim serve|seed-taxa|seed-region"
+  putStrLn "birdism serve|seed-taxa|seed-region"
 
-printExit :: BL.ByteString -> IO ()
-printExit msg = BL.putStrLn msg >> exitFailure
+exitWithError :: BL.ByteString -> IO ()
+exitWithError msg = BL.putStrLn msg >> exitFailure

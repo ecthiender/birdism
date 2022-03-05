@@ -1,13 +1,3 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeOperators              #-}
-
 module Birdism.Api where
 
 import           Control.Lens
@@ -117,7 +107,6 @@ processSpeciesSearch
      , MonadReader r m
      , HasDbConfig r
      , HasEBirdConf r
-     , HasFlickrConf r
      , HasAppCtx r
      , MonadError e m
      , AsEbirdError e
@@ -153,12 +142,7 @@ instance J.ToJSON FamilyScientificNameResponse where
 getFamilyScientificName
   :: ( MonadIO m
      , MonadReader r m
-     , HasDbConfig r
-     , HasEBirdConf r
-     , HasFlickrConf r
      , HasAppCtx r
-     , MonadError e m
-     , AsEbirdError e
      )
   => FamilyScientificNameRequest -> m FamilyScientificNameResponse
 getFamilyScientificName (FamilyScientificNameRequest commonName) = do
@@ -171,21 +155,26 @@ validateRegion
   :: (MonadReader s m, HasAppCtx s, MonadError e m, AsEbirdError e)
   => RegionCode -> m Region
 validateRegion region = do
-  regionCache <- asks (^. axRegionsCache)
-  let found = find (\x -> _rRegionCode x == region) (unRegionsCache regionCache)
-  case found of
-    Nothing -> throwError $ _EbirdErrorSearch # "Invalid region"
-    Just r  -> return r
+  cache <- unRegionsCache <$> asks (^. axRegionsCache)
+  let findRegion x = region == _rRegionCode x
+  validate findRegion cache (_EbirdErrorSearch # "Invalid region")
 
 validateFamily
   :: (MonadReader s m, HasAppCtx s, MonadError e m, AsEbirdError e)
   => ScientificName -> m Family
 validateFamily family = do
-  fams <- asks (^. axBirdFamiliesCache)
-  let found = find (\f -> _fScientificName f == family) (unFamiliesCache fams)
-  case found of
-    Nothing  -> throwError $ _EbirdErrorSearch # "Invalid family"
-    Just fam -> return fam
+  cache <- unFamiliesCache <$> asks (^. axBirdFamiliesCache)
+  let findScName x = family == _fScientificName x
+  validate findScName cache (_EbirdErrorSearch # "Invalid family")
+
+-- | Function that generalizes some validation and parsing of string-ly values
+-- into proper domain-types. E.g. - a string based region code can be converted
+-- to a 'Region' type etc.
+validate :: (MonadError e m) => (a -> Bool) -> [a] -> e -> m a
+validate check cache e = do
+  case find check cache of
+    Nothing -> throwError e
+    Just r  -> return r
 
 getFamilies
   :: ( MonadIO m
@@ -218,4 +207,5 @@ redirect
 redirect a = return (addHeader a NoContent)
 
 newtype RedirectLocation = RedirectLocation Text
-  deriving (Show, ToHttpApiData)
+  deriving stock (Show)
+  deriving newtype (ToHttpApiData)

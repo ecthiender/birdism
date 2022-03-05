@@ -1,7 +1,3 @@
-{-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 -- | Module to encapsulate functions that work with the database to fetch data
 
 module Birdism.Data where

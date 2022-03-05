@@ -1,25 +1,29 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE OverloadedStrings          #-}
+module Birdism.Server
+  ( httpApp
+  ) where
 
-module Birdism.Server where
-
-import           Control.Monad.Except
-import           Control.Monad.Reader
+import           Control.Monad.Except                 (ExceptT, MonadError (throwError),
+                                                       MonadIO (..), runExceptT)
+import           Control.Monad.Reader                 (MonadReader, ReaderT (..))
 import           Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import           Network.Wai.Middleware.Static        (addBase, staticPolicy)
+import           Servant                              (Handler, ServerError (..), err400, err500,
+                                                       hoistServer, serve)
 
 import qualified Data.Aeson                           as J
 import qualified Network.Wai                          as Wai
 
-import           Birdism.Api
+import           Birdism.Api                          (birdismApiServer, serverProxy)
 import           Birdism.Config
 
-import           Servant
 
 newtype AppM a
   = AppM { unAppM :: ReaderT AppCtx (ExceptT AppError IO) a }
-  deriving (Functor, Applicative, Monad, MonadReader AppCtx, MonadError AppError, MonadIO)
+  deriving newtype ( Functor, Applicative, Monad
+                   , MonadReader AppCtx
+                   , MonadError AppError
+                   , MonadIO
+                   )
 
 runAppM :: AppM a -> AppCtx -> IO (Either AppError a)
 runAppM app = runExceptT . runReaderT (unAppM app)

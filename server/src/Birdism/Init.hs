@@ -1,5 +1,4 @@
 -- | Code related to initialization
-{-# LANGUAGE TemplateHaskell #-}
 
 module Birdism.Init where
 

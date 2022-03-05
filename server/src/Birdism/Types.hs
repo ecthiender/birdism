@@ -1,7 +1,3 @@
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Birdism.Types where
 
 import           Data.Hashable

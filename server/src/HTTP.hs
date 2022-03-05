@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
 module HTTP where
 
 import           Birdism.Common

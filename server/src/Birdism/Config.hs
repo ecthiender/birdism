@@ -1,8 +1,3 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-
 module Birdism.Config
   -- ( AppConfig (..)
   -- , AppCtx (..)

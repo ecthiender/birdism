@@ -1,9 +1,3 @@
-{-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-
 module Birdism.Lib
   ( getCorpus
   , getSpeciesByRegionFamily
@@ -50,7 +44,6 @@ getSpeciesByRegionFamily
      , MonadError e m
      , HasDbConfig r
      , HasEBirdConf r
-     , HasFlickrConf r
      , AsEbirdError e
      )
   => Region -> Family -> m [Bird]

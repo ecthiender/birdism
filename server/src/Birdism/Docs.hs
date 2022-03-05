@@ -1,8 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
--- |
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE OverloadedStrings #-}
-
+-- |
 module Birdism.Docs where
 
 import           Servant.Docs

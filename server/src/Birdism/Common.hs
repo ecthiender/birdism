@@ -12,7 +12,6 @@ module Birdism.Common
 
 import           Control.Applicative         as M (Alternative (..))
 import           Control.Arrow               as M (first, second, (&&&), (***), (<<<), (>>>))
--- import           Control.Monad.Base                as M
 import           Control.Monad.Except        as M
 import           Control.Monad.Identity      as M
 import           Control.Monad.Reader        as M
