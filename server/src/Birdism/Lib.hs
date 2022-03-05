@@ -10,19 +10,17 @@ module Birdism.Lib
   , ImgUrl
   ) where
 
-import           Control.Lens
-
-import qualified Control.Concurrent.Async as Async
-import qualified Data.Aeson.Casing        as J
-import qualified Data.Aeson.TH            as J
+import qualified Control.Concurrent.Async          as Async
+import qualified Data.Aeson.Casing                 as J
+import qualified Data.Aeson.TH                     as J
 
 import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Types
 
-import qualified Birdism.Data             as Data
-import qualified Service.Ebird            as ServiceEbird
-import qualified Service.Flickr.Photos    as ServiceFlickr
+import qualified Birdism.Data                      as Data
+import qualified Service.Ebird                     as ServiceEbird
+import qualified Service.MacaulayLibrary.V1.Search as ServiceMacaulay
 
 
 type ImgUrl = Text
@@ -56,7 +54,7 @@ getSpeciesByRegionFamily region family = do
   pure $ catMaybes matchedSpecies
 
 getImagesBySpecies
-  :: (MonadReader s m, HasFlickrConf s, MonadIO m)
+  :: (MonadReader s m, MonadIO m)
   => [Bird] -> m [SearchResultItem]
 getImagesBySpecies = getImages
 
@@ -66,7 +64,6 @@ getCorpus
      , MonadError e m
      , HasDbConfig r
      , HasEBirdConf r
-     , HasFlickrConf r
      , AsEbirdError e
      )
   => Region -> Family -> m SearchResult
@@ -76,12 +73,10 @@ getCorpus region family = do
 
 -- Given a list of 'Bird's, get the final search result, by combining the common names and a list
 -- of image URLs into a hashmap
-getImages :: (MonadReader s m, HasFlickrConf s, MonadIO m) => [Bird] -> m [SearchResultItem]
+getImages :: (MonadReader s m, MonadIO m) => [Bird] -> m [SearchResultItem]
 getImages birds = do
   let commonNames = map bCommonName birds
   zipWith SearchResultItem commonNames <$> getImageUrls
   where
-    getImageUrls = do
-      apiKey <- asks (^. fcKey)
-      liftIO $ Async.forConcurrently birds $
-        ServiceFlickr.searchPhotos apiKey . (uCommonName . bCommonName)
+    getImageUrls =
+      liftIO $ Async.mapConcurrently (ServiceMacaulay.searchMedia . bSpeciesCode) birds
