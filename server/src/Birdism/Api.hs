@@ -1,8 +1,6 @@
 module Birdism.Api where
 
-import           Control.Lens
-import           Servant
-
+import qualified Birdism.Cache     as Cache
 import qualified Data.Aeson        as J
 import qualified Data.Aeson.Casing as J
 import qualified Data.Text         as T
@@ -11,9 +9,9 @@ import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Lib
 import           Birdism.Types
+import           Control.Lens
 import           GHC.TypeLits      (Nat)
-import qualified Birdism.Cache as Cache
-import Birdism.Cache (HasBirdismCache(birdismCache))
+import           Servant
 
 
 type BirdismHttpAPIF f

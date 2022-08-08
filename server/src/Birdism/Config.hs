@@ -14,7 +14,7 @@ module Birdism.Config
   , dbConnection
   , HasDbConfig
   , HasAppCtx
-  , HasBirdismCache
+  , HasBirdismCache (..)
   , mkConfig
   , readConfig
   , encodeErr
@@ -32,7 +32,7 @@ import qualified Data.ByteString.Char8      as B
 import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
 
-import           Birdism.Cache              (BirdismCache, HasBirdismCache(..))
+import           Birdism.Cache              (BirdismCache, HasBirdismCache (..))
 import           Birdism.Common
 import           Service.Flickr.Context     (AsFlickrError (..), FlickrConf (..), FlickrError,
                                              HasFlickrConf (..))

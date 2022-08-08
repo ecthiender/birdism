@@ -5,6 +5,7 @@
 ### Fixes
 - various fixes (#16)
 - caching for flickr search
+- caching for ebird species list of a region
 
 ### Maintenance
 - rewrite the API server in Servant (#14)

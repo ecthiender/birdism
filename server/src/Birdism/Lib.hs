@@ -51,6 +51,7 @@ getSpeciesByRegionFamily
      , MonadReader r m
      , MonadError e m
      , HasDbConfig r
+     , HasBirdismCache r
      , HasEBirdConf r
      , AsEbirdError e
      )

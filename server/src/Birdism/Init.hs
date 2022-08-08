@@ -22,8 +22,8 @@ initialiseAppCtx (AppConfig dbUrl port ebird flickr) = do
   -- create an in-memory cache of family names and region, as they don't change
   regions  <- runReaderT getRegionNames dbConf
   families <- runReaderT getFamilyNames dbConf
-  birdismCache <- Cache.newCache regions families
-  return $ AppCtx dbConf (fromMaybe defaultServerPort port) birdismCache ebird flickr
+  cache <- Cache.newCache regions families
+  return $ AppCtx dbConf (fromMaybe defaultServerPort port) cache ebird flickr
 
 initialiseDatabase :: MonadIO m => PG.Connection -> m ()
 initialiseDatabase conn = do
