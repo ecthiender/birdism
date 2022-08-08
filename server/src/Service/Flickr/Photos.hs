@@ -1,9 +1,11 @@
 module Service.Flickr.Photos where
 
+import           Birdism.Cache          (HasBirdismCache (..))
 import           Birdism.Common
 import           Control.Lens
 import           Service.Flickr.Context
 
+import qualified Birdism.Cache          as Cache
 import qualified Data.Aeson             as J
 import qualified Data.Aeson.Casing      as J
 import qualified Data.Aeson.TH          as J
@@ -32,35 +34,23 @@ instance J.FromJSON FlickrResponse where
     return $ FlickrResponse ph
   parseJSON _ = fail "unexpected JSON response from Flickr"
 
-data FlickrError
-  = FlickrErrorSearch !Text
-  | FlickrErrorParseResponse !Text
-  | FlickrErrorUnexpected !Text
-  deriving (Show)
-
-makeClassyPrisms ''FlickrError
-
-$(J.deriveToJSON
-  J.defaultOptions { J.constructorTagModifier = J.snakeCase
-                   , J.sumEncoding = J.TaggedObject "code" "error"
-                   } ''FlickrError)
-
 -- | Main API to search photos in Flickr
 searchPhotos
   :: ( MonadError e m
      , AsFlickrError e
      , MonadReader r m
-     , HasFlickrContext r
+     , HasFlickrConf r
+     , HasBirdismCache r
      , MonadIO m
      )
   => Text -> m [Text]
 searchPhotos term = do
   r <- ask
-  let apiKey = r ^. fcxConf . fcKey
-      cache = r ^. fcxCache
+  let apiKey = r ^. fcKey
+      cache = r ^. birdismCache
 
   -- liftIO $ putStrLn "Flickr Photo Search :: Looking up flickr cache"
-  lookupFlickrCache term cache >>= \case
+  Cache.lookupFlickrCache term cache >>= \case
     Just urls -> pure urls
     Nothing -> do
       -- liftIO (putStrLn "Flickr Photo Search :: cache miss")
@@ -70,7 +60,7 @@ searchPhotos term = do
       case resp of
         Right photos -> do
           let urls = map _fprUrlM $ unFlickrResponse photos
-          writeFlickrCache term urls cache
+          Cache.writeFlickrCache term urls cache
           return urls
         Left e       -> do
           -- TODO: add proper logging

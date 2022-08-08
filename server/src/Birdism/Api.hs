@@ -1,9 +1,5 @@
 module Birdism.Api where
 
-import           Control.Lens
-import           Servant
-
-
 import qualified Data.Aeson        as J
 import qualified Data.Aeson.Casing as J
 import qualified Data.Text         as T
@@ -12,7 +8,9 @@ import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Lib
 import           Birdism.Types
+import           Control.Lens
 import           GHC.TypeLits      (Nat)
+import           Servant
 
 
 type BirdismHttpAPIF f
@@ -90,11 +88,13 @@ processSearch
   :: ( MonadIO m
      , MonadReader r m
      , HasDbConfig r
-     , HasFlickrContext r
+     , HasAllRegions r
+     , HasAllFamilies r
+     , HasBirdismCache r
+     , HasFlickrConf r
      , HasEBirdConf r
      , MonadError e m
      , AsEbirdError e
-     , HasAppCtx r
      )
   => SearchRequest -> m SearchResult
 processSearch (SearchRequest regionCode familySciName) = do
@@ -106,8 +106,10 @@ processSpeciesSearch
   :: ( MonadIO m
      , MonadReader r m
      , HasDbConfig r
+     , HasAllRegions r
+     , HasAllFamilies r
      , HasEBirdConf r
-     , HasAppCtx r
+     , HasBirdismCache r
      , MonadError e m
      , AsEbirdError e
      )
@@ -119,7 +121,8 @@ processSpeciesSearch (SearchRequest regionCode familySciName) = do
 
 processImageSearch
   :: ( MonadReader r m
-     , HasFlickrContext r
+     , HasFlickrConf r
+     , HasBirdismCache r
      , MonadIO m
      )
   => [CommonName] -> m SearchResult
@@ -145,30 +148,30 @@ instance J.ToJSON FamilyScientificNameResponse where
 getFamilyScientificName
   :: ( MonadIO m
      , MonadReader r m
-     , HasAppCtx r
+     , HasAllFamilies r
      )
   => FamilyScientificNameRequest -> m FamilyScientificNameResponse
 getFamilyScientificName (FamilyScientificNameRequest commonName) = do
-  fams <- asks (^. axBirdFamiliesCache)
+  families <- asks (^. allFamilies)
   let isSubStr v1 v2 = T.isInfixOf (T.toLower $ uCommonName v1) (T.toLower $ uCommonName v2)
-      found = filter (isSubStr commonName . _fCommonName) (unFamiliesCache fams)
+      found = filter (isSubStr commonName . _fCommonName) (unAllFamilies families)
   pure $ FamilyScientificNameResponse found
 
 validateRegion
-  :: (MonadReader s m, HasAppCtx s, MonadError e m, AsEbirdError e)
+  :: (MonadReader r m, HasAllRegions r, MonadError e m, AsEbirdError e)
   => RegionCode -> m Region
 validateRegion region = do
-  cache <- unRegionsCache <$> asks (^. axRegionsCache)
+  regions <- unAllRegions <$> asks (^. allRegions)
   let findRegion x = region == _rRegionCode x
-  validate findRegion cache (_EbirdErrorSearch # "Invalid region")
+  validate findRegion regions (_EbirdErrorSearch # "Invalid region")
 
 validateFamily
-  :: (MonadReader s m, HasAppCtx s, MonadError e m, AsEbirdError e)
+  :: (MonadReader r m, HasAllFamilies r, MonadError e m, AsEbirdError e)
   => ScientificName -> m Family
 validateFamily family = do
-  cache <- unFamiliesCache <$> asks (^. axBirdFamiliesCache)
+  families <- unAllFamilies <$> asks (^. allFamilies)
   let findScName x = family == _fScientificName x
-  validate findScName cache (_EbirdErrorSearch # "Invalid family")
+  validate findScName families (_EbirdErrorSearch # "Invalid family")
 
 -- | Function that generalizes some validation and parsing of string-ly values
 -- into proper domain-types. E.g. - a string based region code can be converted
@@ -179,21 +182,20 @@ validate check cache e = maybe (throwError e) pure $ find check cache
 getFamilies
   :: ( MonadIO m
      , MonadReader r m
-     , HasAppCtx r
+     , HasAllFamilies r
      )
   => m FamilyNames
 getFamilies =
-  asks (^. axBirdFamiliesCache) <&> unFamiliesCache
+  unAllFamilies <$> asks (^. allFamilies)
 
 getRegions
   :: ( MonadIO m
      , MonadReader r m
-     , HasAppCtx r
+     , HasAllRegions r
      )
   => m RegionNames
-getRegions =
-  asks (^. axRegionsCache) <&> unRegionsCache
-
+getRegions = do
+  unAllRegions <$> asks (^. allRegions)
 
 -- * Internal Servant extensions
 

@@ -3,13 +3,13 @@
 
 module Service.Flickr.Context where
 
-import           Birdism.Common      (Generic, MonadIO, Text, liftIO)
-import           Control.Lens        (makeClassy)
+import           Birdism.Common    (Generic, Text)
+import           Control.Lens      (makeClassy, makeClassyPrisms)
 
-import qualified Data.Aeson          as J
-import qualified Data.Aeson.Casing   as J
-import qualified Data.HashMap.Strict as Map
-import qualified Data.IORef          as IORef
+import qualified Data.Aeson        as J
+import qualified Data.Aeson.Casing as J
+import qualified Data.Aeson.TH     as J
+
 
 data FlickrConf
   = FlickrConf
@@ -25,30 +25,15 @@ instance J.FromJSON FlickrConf where
 
 makeClassy ''FlickrConf
 
-type Cache = Map.HashMap Text [Text]
+data FlickrError
+  = FlickrErrorSearch !Text
+  | FlickrErrorParseResponse !Text
+  | FlickrErrorUnexpected !Text
+  deriving (Show)
 
-newtype FlickrCache =
-  FlickrCache { unFlickrCache :: IORef.IORef Cache }
+makeClassyPrisms ''FlickrError
 
-makeClassy ''FlickrCache
-
-mkFlickrCache :: MonadIO m => m FlickrCache
-mkFlickrCache = FlickrCache <$> liftIO (IORef.newIORef mempty)
-
-lookupFlickrCache :: MonadIO m => Text -> FlickrCache -> m (Maybe [Text])
-lookupFlickrCache key store = do
-  cache <- liftIO $ IORef.readIORef $ unFlickrCache store
-  pure $ Map.lookup key cache
-
-writeFlickrCache :: MonadIO m => Text -> [Text] -> FlickrCache -> m ()
-writeFlickrCache key val store = do
-  liftIO $ IORef.modifyIORef' (unFlickrCache store) $ \cache ->
-    Map.insert key val cache
-
-data FlickrContext
-  = FlickrContext
-  { _fcxConf :: !FlickrConf
-  , _fcxCache :: !FlickrCache
-  }
-
-makeClassy ''FlickrContext
+$(J.deriveToJSON
+  J.defaultOptions { J.constructorTagModifier = J.snakeCase
+                   , J.sumEncoding = J.TaggedObject "code" "error"
+                   } ''FlickrError)
