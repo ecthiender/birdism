@@ -13,7 +13,7 @@ module Birdism.Lib
 import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Types
-import           Service.Flickr.Photos    (FlickrError)
+import           Service.Flickr.Context   (FlickrError)
 
 import qualified Control.Concurrent.Async as Async
 import qualified Data.Aeson               as J
@@ -64,8 +64,9 @@ getSpeciesByRegionFamily region family = do
   pure $ catMaybes matchedSpecies
 
 getImagesBySpecies
-  :: ( MonadReader s m
-     , HasFlickrContext s
+  :: ( MonadReader r m
+     , HasFlickrConf r
+     , HasBirdismCache r
      , MonadIO m
      )
   => [CommonName] -> m [SearchResultItem]
@@ -77,7 +78,8 @@ getCorpus
      , MonadError e m
      , HasDbConfig r
      , HasEBirdConf r
-     , HasFlickrContext r
+     , HasFlickrConf r
+     , HasBirdismCache r
      , AsEbirdError e
      )
   => Region -> Family -> m SearchResult
@@ -88,7 +90,8 @@ getCorpus region family =
 -- names and a list of image URLs into a hashmap
 getImages
   :: ( MonadReader r m
-     , HasFlickrContext r
+     , HasFlickrConf r
+     , HasBirdismCache r
      , MonadIO m
      )
   => [CommonName] -> m [SearchResultItem]

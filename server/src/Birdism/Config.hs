@@ -1,24 +1,20 @@
 module Birdism.Config
   ( AppConfig (..)
   , AppCtx (..)
-  , axBirdFamiliesCache
-  , axRegionsCache
+  , axAppCache
   , AppError (..)
   , EbirdError (..)
   , AsEbirdError (..)
   , EBirdConf (..)
   , ebcToken
   , FlickrConf (..)
+  , HasFlickrConf
   , HasEBirdConf
-  , HasFlickrContext
   , DbConfig (..)
   , dbConnection
   , HasDbConfig
   , HasAppCtx
-  , FamiliesCache (..)
-  , HasFamiliesCache (..)
-  , RegionsCache (..)
-  , HasRegionsCache (..)
+  , HasBirdismCache
   , mkConfig
   , readConfig
   , encodeErr
@@ -36,11 +32,10 @@ import qualified Data.ByteString.Char8      as B
 import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
 
+import           Birdism.Cache              (BirdismCache, HasBirdismCache(..))
 import           Birdism.Common
-import           Birdism.Types
-import           Service.Flickr.Context     (FlickrConf (..), FlickrContext (..),
-                                             HasFlickrContext (..))
-import           Service.Flickr.Photos      (AsFlickrError (..), FlickrError)
+import           Service.Flickr.Context     (AsFlickrError (..), FlickrConf (..), FlickrError,
+                                             HasFlickrConf (..))
 
 configEnv :: String
 configEnv = "BIRDISM_CONFIG"
@@ -83,34 +78,16 @@ data DbConfig
   }
 makeClassy ''DbConfig
 
-newtype FamiliesCache = FamiliesCache { unFamiliesCache :: [Family] }
-makeClassy ''FamiliesCache
-
-newtype RegionsCache = RegionsCache { unRegionsCache :: [Region] }
-makeClassy ''RegionsCache
-
-
 -- | The sort of global, immutable environment available to the entire app via the Reader monad.
 -- Things like various API keys, the database connection, in-memory caches etc.
 data AppCtx
   = AppCtx
-  { _axDbConn            :: !DbConfig
+  { _axDbConn     :: !DbConfig
   -- ^ database connection. TODO: change it to a pool
-
-  , _axServerPort        :: !Int
-
-  , _axBirdFamiliesCache :: !FamiliesCache
-  -- ^ a global cache of all the bird families. The HTTP API can just read from this and return; it
-  -- doesn't need to hit the database. This rarely changes, hence this is totally safe. It prepares
-  -- the cache only on startup. If you ever need to bust this cache, just restart the server. ,
-
-  , _axRegionsCache      :: !RegionsCache
-  -- ^ a global cache of all the regions. The HTTP API can just read from this and return; it
-  -- doesn't need to hit the database. This rarely changes, hence this is totally safe. It prepares
-  -- the cache only on startup. If you ever need to bust this cache, just restart the server. ,
-
-  , _axEbirdConf         :: !EBirdConf
-  , _axFlickrCtx         :: !FlickrContext
+  , _axServerPort :: !Int
+  , _axAppCache   :: !BirdismCache
+  , _axEbirdConf  :: !EBirdConf
+  , _axFlickrConf :: !FlickrConf
   }
 
 makeClassy ''AppCtx
@@ -118,17 +95,14 @@ makeClassy ''AppCtx
 instance HasEBirdConf AppCtx where
   eBirdConf = appCtx . axEbirdConf
 
-instance HasFlickrContext AppCtx where
-  flickrContext = appCtx . axFlickrCtx
+instance HasFlickrConf AppCtx where
+  flickrConf = appCtx . axFlickrConf
 
 instance HasDbConfig AppCtx where
   dbConfig = appCtx . axDbConn
 
-instance HasFamiliesCache AppCtx where
-  familiesCache = appCtx . axBirdFamiliesCache
-
-instance HasRegionsCache AppCtx where
-  regionsCache = appCtx . axRegionsCache
+instance HasBirdismCache AppCtx where
+  birdismCache = appCtx . axAppCache
 
 data DbError
   = PostgresError !Text

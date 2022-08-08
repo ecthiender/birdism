@@ -4,6 +4,7 @@
 
 ### Fixes
 - various fixes (#16)
+- caching for flickr search
 
 ### Maintenance
 - rewrite the API server in Servant (#14)

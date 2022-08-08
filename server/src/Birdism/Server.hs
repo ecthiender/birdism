@@ -14,7 +14,7 @@ import qualified Servant
 import           Birdism.Api                          (birdismApiServer, serverProxy)
 import           Birdism.Common
 import           Birdism.Config
-import           Service.Flickr.Photos                (FlickrError (..))
+import           Service.Flickr.Context               (FlickrError (..))
 
 
 newtype AppM a
