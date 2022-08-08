@@ -31,14 +31,16 @@ instance ToSample FamilyScientificNameResponse where
 
 searchResults :: [SearchResultItem]
 searchResults =
-  [ SearchResultItem (CommonName "Pied Cuckoo") [ "https://live.staticflickr.com/xxxx/yyyyyyyyyyyy_xxxxxxxxx.jpg"
-                                                , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
-                                                , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
-                                                ]
-  , SearchResultItem (CommonName "Asian Koel") [ "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-                                               , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-                                               , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-                                               ]
+  [ SearchResultItem (CommonName "Pied Cuckoo") $
+      Right [ "https://live.staticflickr.com/xxxx/yyyyyyyyyyyy_xxxxxxxxx.jpg"
+            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
+            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
+            ]
+  , SearchResultItem (CommonName "Asian Koel") $
+      Right [ "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
+            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
+            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
+            ]
   ]
 
 instance ToSample SearchResultItem where
@@ -84,6 +86,11 @@ instance ToSample Bird where
 
 instance ToSample RedirectLocation where
   toSamples _ = singleSample $ RedirectLocation "/index.html"
+
+instance ToSample CommonName where
+  toSamples _ = samples [ CommonName "Barn Owl"
+                        , CommonName "Blue-faced Malkoha"
+                        ]
 
 apiDocs :: API
 apiDocs = docs (pretty serverProxy)

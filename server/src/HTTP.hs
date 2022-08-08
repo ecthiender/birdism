@@ -31,11 +31,13 @@ httpGetJSON
      )
   => String
   -- ^ the complete URL
+  -> Maybe W.Options
+  -- ^ Wreq 'W.Options'
   -> [HTTP.Header]
   -- ^ optional request headers
   -> m a
   -- ^ return parsed type from expected JSON response
-httpGetJSON url headers = do
+httpGetJSON url wreqOptions headers = do
   httpRes <- liftIO (try $ W.getWith opts url)
 
   -- throw error if any connection error occurs
@@ -59,12 +61,12 @@ httpGetJSON url headers = do
     Left e    -> throwError $ HREParseResponseFailed respBodyTxt e
     Right res -> return res
   where
-    opts = W.defaults
-           & W.header "User-Agent" .~ ["birdism/v0.1"]
+    opts = maybe (mkOpts W.defaults) mkOpts wreqOptions
+    mkOpts o = o
+           & W.header "User-Agent" .~ ["birdism/v0.2.2"]
            & W.headers .~ headers
-           & W.checkResponse ?~ (\_ _ -> return ())
+           & W.checkResponse ?~ (\_ _ -> pure ())
            -- & W.manager .~ Right manager
-
 
 httpGet
   :: ( MonadError HttpRequestError m

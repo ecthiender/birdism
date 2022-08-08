@@ -1,20 +1,32 @@
 module Birdism.Config
-  -- ( AppConfig (..)
-  -- , AppCtx (..)
-  -- , AppError (..)
-  -- , EBirdConf (..)
-  -- , FlickrConf (..)
-  -- , HasEBirdConf
-  -- , HasFlickrConf
-  -- , HasDbConfig
-  -- , HasAppCtx
-  -- , mkConfig
-  -- , readConfig
-  -- , initialiseAppCtx
-  -- )
+  ( AppConfig (..)
+  , AppCtx (..)
+  , axBirdFamiliesCache
+  , axRegionsCache
+  , AppError (..)
+  , EbirdError (..)
+  , AsEbirdError (..)
+  , EBirdConf (..)
+  , ebcToken
+  , FlickrConf (..)
+  , HasEBirdConf
+  , HasFlickrContext
+  , DbConfig (..)
+  , dbConnection
+  , HasDbConfig
+  , HasAppCtx
+  , FamiliesCache (..)
+  , HasFamiliesCache (..)
+  , RegionsCache (..)
+  , HasRegionsCache (..)
+  , mkConfig
+  , readConfig
+  , encodeErr
+  , defaultServerPort
+  )
   where
 
-import           Control.Lens
+import           Control.Lens               (makeClassy, makeClassyPrisms)
 import           System.Environment         (lookupEnv)
 
 import qualified Data.Aeson                 as J
@@ -26,6 +38,9 @@ import qualified Database.PostgreSQL.Simple as PG
 
 import           Birdism.Common
 import           Birdism.Types
+import           Service.Flickr.Context     (FlickrConf (..), FlickrContext (..),
+                                             HasFlickrContext (..))
+import           Service.Flickr.Photos      (AsFlickrError (..), FlickrError)
 
 configEnv :: String
 configEnv = "BIRDISM_CONFIG"
@@ -45,20 +60,6 @@ instance J.ToJSON EBirdConf where
 instance J.FromJSON EBirdConf where
   parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
-data FlickrConf
-  = FlickrConf
-  { _fcKey    :: !Text
-  , _fcSecret :: !Text
-  } deriving (Show, Eq, Generic)
-
-instance J.ToJSON FlickrConf where
-  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
-
-instance J.FromJSON FlickrConf where
-  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
-
-makeClassy ''FlickrConf
-
 -- | The configuration required for the app. The database URL and external service API keys
 data AppConfig
   = AppConfig
@@ -66,7 +67,7 @@ data AppConfig
   , acServerPort  :: !(Maybe Int)
   , acEbird       :: !EBirdConf
   , acFlickr      :: !FlickrConf
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Generic)
 
 instance J.ToJSON AppConfig where
   toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
@@ -109,7 +110,7 @@ data AppCtx
   -- the cache only on startup. If you ever need to bust this cache, just restart the server. ,
 
   , _axEbirdConf         :: !EBirdConf
-  , _axFlickrConf        :: !FlickrConf
+  , _axFlickrCtx         :: !FlickrContext
   }
 
 makeClassy ''AppCtx
@@ -117,8 +118,8 @@ makeClassy ''AppCtx
 instance HasEBirdConf AppCtx where
   eBirdConf = appCtx . axEbirdConf
 
-instance HasFlickrConf AppCtx where
-  flickrConf = appCtx . axFlickrConf
+instance HasFlickrContext AppCtx where
+  flickrContext = appCtx . axFlickrCtx
 
 instance HasDbConfig AppCtx where
   dbConfig = appCtx . axDbConn
@@ -156,6 +157,7 @@ $(J.deriveToJSON
 
 data AppError
   = AEEbirdError !EbirdError
+  | AEFlickrError !FlickrError
   | AEDbError !DbError
   | AEConfigError !Text
   deriving (Show)
@@ -168,9 +170,13 @@ instance AsEbirdError AppError where
 instance AsDbError AppError where
   _DbError = _AEDbError . _DbError
 
+instance AsFlickrError AppError where
+  _FlickrError = _AEFlickrError . _FlickrError
+
 instance J.ToJSON AppError where
   toJSON a = case a of
     AEEbirdError e  -> J.toJSON e
+    AEFlickrError e -> J.toJSON e
     AEDbError e     -> J.toJSON e
     AEConfigError e -> J.toJSON e
 
