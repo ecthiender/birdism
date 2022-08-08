@@ -46,7 +46,7 @@ class SearchForm {
     // console.log('making request: ', query);
     m.request({
       method: "POST",
-      url: `/api/v1/search`,
+      url: `/api/v1/search/species`,
       body: {
         "family": query.family.key,
         "region": query.region.key
@@ -56,6 +56,21 @@ class SearchForm {
       // console.log('search results', result);
       app.results = result.result;
       app.searching = false;
+      const commonNames = result.result.map(sp => sp.common_name);
+      m.request({
+        method: 'POST',
+        url: `/api/v1/search/images`,
+        body: commonNames
+      })
+       .then((result) => {
+         app.results = result.result;
+         app.searching = false;
+       })
+       .catch((err) => {
+         console.error('search error', err);
+         app.searching = false;
+         app.errors.push(err);
+       });
     })
     .catch((err) => {
       console.error('search error', err);
@@ -172,7 +187,10 @@ class BirdPhoto {
     const {photos, species} = vnode.attrs;
     // console.log(photos);
     let res;
-    if ('error' in photos && photos.error) {
+    if (photos === undefined) {
+      res = [m("p", '')]
+    }
+    else if ('error' in photos && photos.error) {
       res = [m('p', 'Error with search.')]
     }
     else {

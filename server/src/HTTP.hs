@@ -63,9 +63,9 @@ httpGetJSON url wreqOptions headers = do
   where
     opts = maybe (mkOpts W.defaults) mkOpts wreqOptions
     mkOpts o = o
-           & W.header "User-Agent" .~ ["birdism/v0.1"]
+           & W.header "User-Agent" .~ ["birdism/v0.2.2"]
            & W.headers .~ headers
-           & W.checkResponse ?~ (\_ _ -> return ())
+           & W.checkResponse ?~ (\_ _ -> pure ())
            -- & W.manager .~ Right manager
 
 httpGet

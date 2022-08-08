@@ -87,6 +87,11 @@ instance ToSample Bird where
 instance ToSample RedirectLocation where
   toSamples _ = singleSample $ RedirectLocation "/index.html"
 
+instance ToSample CommonName where
+  toSamples _ = samples [ CommonName "Barn Owl"
+                        , CommonName "Blue-faced Malkoha"
+                        ]
+
 apiDocs :: API
 apiDocs = docs (pretty serverProxy)
 

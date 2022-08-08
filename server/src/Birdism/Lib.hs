@@ -68,7 +68,7 @@ getImagesBySpecies
      , HasFlickrContext s
      , MonadIO m
      )
-  => [Bird] -> m [SearchResultItem]
+  => [CommonName] -> m [SearchResultItem]
 getImagesBySpecies = getImages
 
 getCorpus
@@ -82,7 +82,7 @@ getCorpus
      )
   => Region -> Family -> m SearchResult
 getCorpus region family =
-  getSpeciesByRegionFamily region family >>= getImages
+  getSpeciesByRegionFamily region family >>= getImages . map bCommonName
 
 -- Given a list of 'Bird's, get the final search result, by combining the common
 -- names and a list of image URLs into a hashmap
@@ -91,12 +91,11 @@ getImages
      , HasFlickrContext r
      , MonadIO m
      )
-  => [Bird] -> m [SearchResultItem]
+  => [CommonName] -> m [SearchResultItem]
 getImages birds = do
-  let commonNames = map bCommonName birds
-  zipWith SearchResultItem commonNames <$> getImageUrls
+  zipWith SearchResultItem birds <$> getImageUrls
   where
     getImageUrls = do
       r <- ask
       liftIO $ Async.forConcurrently birds $
-        flip runReaderT r . runExceptT . ServiceFlickr.searchPhotos . (uCommonName . bCommonName)
+        flip runReaderT r . runExceptT . ServiceFlickr.searchPhotos . uCommonName
