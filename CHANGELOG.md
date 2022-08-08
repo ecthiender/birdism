@@ -1,5 +1,13 @@
 # Changelog for birdism
 
+## vNext
+
+### Fixes
+- various fixes (#16)
+
+### Maintenance
+- rewrite the API server in Servant (#14)
+
 ## v0.2.2
 
 ### Fixes
