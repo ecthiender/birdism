@@ -1,6 +1,8 @@
 module Birdism.Config
   ( AppConfig (..)
   , AppCtx (..)
+  , AllFamilies (..)
+  , AllRegions (..)
   , axAppCache
   , AppError (..)
   , EbirdError (..)
@@ -15,6 +17,8 @@ module Birdism.Config
   , HasDbConfig
   , HasAppCtx
   , HasBirdismCache (..)
+  , HasAllFamilies (..)
+  , HasAllRegions (..)
   , mkConfig
   , readConfig
   , encodeErr
@@ -34,6 +38,7 @@ import qualified Database.PostgreSQL.Simple as PG
 
 import           Birdism.Cache              (BirdismCache, HasBirdismCache (..))
 import           Birdism.Common
+import           Birdism.Types              (Family, Region)
 import           Service.Flickr.Context     (AsFlickrError (..), FlickrConf (..), FlickrError,
                                              HasFlickrConf (..))
 
@@ -78,6 +83,12 @@ data DbConfig
   }
 makeClassy ''DbConfig
 
+newtype AllFamilies = AllFamilies { unAllFamilies :: [Family] }
+makeClassy ''AllFamilies
+
+newtype AllRegions = AllRegions { unAllRegions :: [Region] }
+makeClassy ''AllRegions
+
 -- | The sort of global, immutable environment available to the entire app via the Reader monad.
 -- Things like various API keys, the database connection, in-memory caches etc.
 data AppCtx
@@ -85,9 +96,11 @@ data AppCtx
   { _axDbConn     :: !DbConfig
   -- ^ database connection. TODO: change it to a pool
   , _axServerPort :: !Int
-  , _axAppCache   :: !BirdismCache
   , _axEbirdConf  :: !EBirdConf
   , _axFlickrConf :: !FlickrConf
+  , _axRegions    :: !AllRegions
+  , _axFamilies   :: !AllFamilies
+  , _axAppCache   :: !BirdismCache
   }
 
 makeClassy ''AppCtx
@@ -103,6 +116,12 @@ instance HasDbConfig AppCtx where
 
 instance HasBirdismCache AppCtx where
   birdismCache = appCtx . axAppCache
+
+instance HasAllFamilies AppCtx where
+  allFamilies = appCtx . axFamilies
+
+instance HasAllRegions AppCtx where
+  allRegions = appCtx . axRegions
 
 data DbError
   = PostgresError !Text

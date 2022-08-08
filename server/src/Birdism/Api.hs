@@ -1,6 +1,5 @@
 module Birdism.Api where
 
-import qualified Birdism.Cache     as Cache
 import qualified Data.Aeson        as J
 import qualified Data.Aeson.Casing as J
 import qualified Data.Text         as T
@@ -89,6 +88,8 @@ processSearch
   :: ( MonadIO m
      , MonadReader r m
      , HasDbConfig r
+     , HasAllRegions r
+     , HasAllFamilies r
      , HasBirdismCache r
      , HasFlickrConf r
      , HasEBirdConf r
@@ -105,6 +106,8 @@ processSpeciesSearch
   :: ( MonadIO m
      , MonadReader r m
      , HasDbConfig r
+     , HasAllRegions r
+     , HasAllFamilies r
      , HasEBirdConf r
      , HasBirdismCache r
      , MonadError e m
@@ -145,31 +148,28 @@ instance J.ToJSON FamilyScientificNameResponse where
 getFamilyScientificName
   :: ( MonadIO m
      , MonadReader r m
-     , HasBirdismCache r
+     , HasAllFamilies r
      )
   => FamilyScientificNameRequest -> m FamilyScientificNameResponse
 getFamilyScientificName (FamilyScientificNameRequest commonName) = do
-  cache <- asks (^. birdismCache)
-  families <- Cache.getFamiliesCache cache
+  families <- asks (^. allFamilies)
   let isSubStr v1 v2 = T.isInfixOf (T.toLower $ uCommonName v1) (T.toLower $ uCommonName v2)
-      found = filter (isSubStr commonName . _fCommonName) families
+      found = filter (isSubStr commonName . _fCommonName) (unAllFamilies families)
   pure $ FamilyScientificNameResponse found
 
 validateRegion
-  :: (MonadReader r m, HasBirdismCache r, MonadError e m, AsEbirdError e, MonadIO m)
+  :: (MonadReader r m, HasAllRegions r, MonadError e m, AsEbirdError e)
   => RegionCode -> m Region
 validateRegion region = do
-  cache <- asks (^. birdismCache)
-  regions <- Cache.getRegionsCache cache
+  regions <- unAllRegions <$> asks (^. allRegions)
   let findRegion x = region == _rRegionCode x
   validate findRegion regions (_EbirdErrorSearch # "Invalid region")
 
 validateFamily
-  :: (MonadIO m, MonadReader r m, HasBirdismCache r, MonadError e m, AsEbirdError e)
+  :: (MonadReader r m, HasAllFamilies r, MonadError e m, AsEbirdError e)
   => ScientificName -> m Family
 validateFamily family = do
-  cache <- asks (^. birdismCache)
-  families <- Cache.getFamiliesCache cache
+  families <- unAllFamilies <$> asks (^. allFamilies)
   let findScName x = family == _fScientificName x
   validate findScName families (_EbirdErrorSearch # "Invalid family")
 
@@ -182,22 +182,20 @@ validate check cache e = maybe (throwError e) pure $ find check cache
 getFamilies
   :: ( MonadIO m
      , MonadReader r m
-     , HasBirdismCache r
+     , HasAllFamilies r
      )
   => m FamilyNames
-getFamilies = do
-  cache <- asks (^. birdismCache)
-  Cache.getFamiliesCache cache
+getFamilies =
+  unAllFamilies <$> asks (^. allFamilies)
 
 getRegions
   :: ( MonadIO m
      , MonadReader r m
-     , HasBirdismCache r
+     , HasAllRegions r
      )
   => m RegionNames
 getRegions = do
-  cache <- asks (^. birdismCache)
-  Cache.getRegionsCache cache
+  unAllRegions <$> asks (^. allRegions)
 
 -- * Internal Servant extensions
 

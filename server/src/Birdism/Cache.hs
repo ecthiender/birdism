@@ -4,10 +4,6 @@ module Birdism.Cache
   ( BirdismCache
   , HasBirdismCache (..)
   , newCache
-  , getRegionsCache
-  , writeRegionsCache
-  , getFamiliesCache
-  , writeFamiliesCache
   , lookupFlickrCache
   , writeFlickrCache
   , lookupEbirdCache
@@ -15,7 +11,7 @@ module Birdism.Cache
   ) where
 
 import           Birdism.Common      (MonadIO, Text, liftIO, (<&>))
-import           Birdism.Types       (Family, Region, SpeciesCode)
+import           Birdism.Types       (SpeciesCode)
 import           Control.Lens        (makeClassy)
 
 import qualified Data.HashMap.Strict as Map
@@ -23,10 +19,8 @@ import qualified Data.IORef          as IORef
 
 data CacheData
   = CacheData
-  { cdRegionsCache  :: [Region]
-  , cdFamiliesCache :: [Family]
-  , cdFlickrCache   :: Map.HashMap Text [Text]
-  , cdEbirdCache    :: Map.HashMap Text [SpeciesCode]
+  { cdFlickrCache :: !(Map.HashMap Text [Text])
+  , cdEbirdCache  :: !(Map.HashMap Text [SpeciesCode])
   }
 
 newtype BirdismCache =
@@ -34,26 +28,10 @@ newtype BirdismCache =
 
 makeClassy ''BirdismCache
 
-newCache :: MonadIO m => [Region] -> [Family] -> m BirdismCache
-newCache regions families = do
-  store <- liftIO $ IORef.newIORef $ CacheData regions families mempty mempty
+newCache :: MonadIO m => m BirdismCache
+newCache = do
+  store <- liftIO $ IORef.newIORef $ CacheData mempty mempty
   pure $ BirdismCache store
-
-getRegionsCache :: MonadIO m => BirdismCache -> m [Region]
-getRegionsCache store = lookupp store <&> cdRegionsCache
-
-writeRegionsCache :: MonadIO m => [Region] -> BirdismCache -> m ()
-writeRegionsCache regions store =
-  liftIO $ IORef.modifyIORef' (unBirdisimCache store) $ \cache ->
-    cache { cdRegionsCache = regions }
-
-getFamiliesCache :: MonadIO m => BirdismCache -> m [Family]
-getFamiliesCache store = lookupp store <&> cdFamiliesCache
-
-writeFamiliesCache :: MonadIO m => [Family] -> BirdismCache -> m ()
-writeFamiliesCache families store =
-  liftIO $ IORef.modifyIORef' (unBirdisimCache store) $ \cache ->
-    cache { cdFamiliesCache = families }
 
 lookupFlickrCache :: MonadIO m => Text -> BirdismCache -> m (Maybe [Text])
 lookupFlickrCache key store = do
