@@ -31,14 +31,16 @@ instance ToSample FamilyScientificNameResponse where
 
 searchResults :: [SearchResultItem]
 searchResults =
-  [ SearchResultItem (CommonName "Pied Cuckoo") [ "https://live.staticflickr.com/xxxx/yyyyyyyyyyyy_xxxxxxxxx.jpg"
-                                                , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
-                                                , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
-                                                ]
-  , SearchResultItem (CommonName "Asian Koel") [ "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-                                               , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-                                               , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-                                               ]
+  [ SearchResultItem (CommonName "Pied Cuckoo") $
+      Right [ "https://live.staticflickr.com/xxxx/yyyyyyyyyyyy_xxxxxxxxx.jpg"
+            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
+            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
+            ]
+  , SearchResultItem (CommonName "Asian Koel") $
+      Right [ "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
+            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
+            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
+            ]
   ]
 
 instance ToSample SearchResultItem where

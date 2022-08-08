@@ -47,7 +47,7 @@ birdismApiServer
   :<|> withApiResponse processSpeciesSearch
   :<|> withApiResponse processImageSearch
   where
-    withApiResponse f = fmap ApiResponse . f
+    withApiResponse handler = fmap ApiResponse . handler
 
 serverProxy :: Proxy BirdismHttpAPI
 serverProxy = Proxy
@@ -90,7 +90,7 @@ processSearch
   :: ( MonadIO m
      , MonadReader r m
      , HasDbConfig r
-     , HasFlickrConf r
+     , HasFlickrContext r
      , HasEBirdConf r
      , MonadError e m
      , AsEbirdError e
@@ -118,7 +118,10 @@ processSpeciesSearch (SearchRequest regionCode familySciName) = do
   getSpeciesByRegionFamily region family
 
 processImageSearch
-  :: (MonadReader r m, HasFlickrConf r, MonadIO m)
+  :: ( MonadReader r m
+     , HasFlickrContext r
+     , MonadIO m
+     )
   => [Bird] -> m SearchResult
 processImageSearch = getImagesBySpecies
 

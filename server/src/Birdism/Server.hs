@@ -2,19 +2,19 @@ module Birdism.Server
   ( httpApp
   ) where
 
-import           Control.Monad.Except                 (ExceptT, MonadError (throwError),
-                                                       MonadIO (..), runExceptT)
-import           Control.Monad.Reader                 (MonadReader, ReaderT (..))
 import           Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import           Network.Wai.Middleware.Static        (addBase, staticPolicy)
-import           Servant                              (Handler, ServerError (..), err400, err500,
+import           Servant                              (ServerError (..), err400, err500,
                                                        hoistServer, serve)
 
 import qualified Data.Aeson                           as J
 import qualified Network.Wai                          as Wai
+import qualified Servant
 
 import           Birdism.Api                          (birdismApiServer, serverProxy)
+import           Birdism.Common
 import           Birdism.Config
+import           Service.Flickr.Photos                (FlickrError (..))
 
 
 newtype AppM a
@@ -34,7 +34,7 @@ httpApp ctx =
   $ staticPolicy (addBase "../app/")
   $ serve serverProxy $ hoistServer serverProxy (appMToServantHandler ctx) birdismApiServer
 
-appMToServantHandler :: AppCtx -> AppM a -> Handler a
+appMToServantHandler :: AppCtx -> AppM a -> Servant.Handler a
 appMToServantHandler ctx service =
   liftIO (runAppM service ctx) >>= either (throwError . toServerError) return
   where
@@ -46,6 +46,10 @@ appMToServantHandler ctx service =
         EbirdErrorSearch _        -> err400
         EbirdErrorParseResponse _ -> err400
         EbirdErrorUnexpected _    -> err500
+      AEFlickrError flErr -> case flErr of
+        FlickrErrorSearch _        -> err400
+        FlickrErrorParseResponse _ -> err400
+        FlickrErrorUnexpected _    -> err500
       AEDbError _     -> err500
       AEConfigError _ -> err400
     jsonHeader = ("Content-Type", "application/json;charset=utf-8")

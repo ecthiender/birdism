@@ -10,20 +10,17 @@ module Birdism.Lib
   , ImgUrl
   ) where
 
-import           Control.Lens
-
-import qualified Control.Concurrent.Async as Async
-import qualified Data.Aeson.Casing        as J
-import qualified Data.Aeson.TH            as J
-
 import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Types
+import           Service.Flickr.Photos    (FlickrError)
+
+import qualified Control.Concurrent.Async as Async
+import qualified Data.Aeson               as J
 
 import qualified Birdism.Data             as Data
 import qualified Service.Ebird            as ServiceEbird
 import qualified Service.Flickr.Photos    as ServiceFlickr
-
 
 type ImgUrl = Text
 
@@ -32,9 +29,20 @@ type ImgUrl = Text
 data SearchResultItem
   = SearchResultItem
   { _srrCommonName :: !CommonName
-  , _srrImageUrls  :: ![ImgUrl]
-  } deriving (Show, Eq)
-$(J.deriveJSON (J.aesonPrefix J.snakeCase) ''SearchResultItem)
+  , _srrImageUrls  :: !(Either FlickrError [ImgUrl])
+  } deriving (Show)
+
+instance J.ToJSON SearchResultItem where
+  toJSON (SearchResultItem name urls) =
+    case urls of
+      Left err ->
+        J.object [ "common_name" J..= name
+                 , "image_urls" J..= err
+                 ]
+      Right us ->
+        J.object [ "common_name" J..= name
+                 , "image_urls" J..= us
+                 ]
 
 type SearchResult = [SearchResultItem]
 
@@ -56,7 +64,10 @@ getSpeciesByRegionFamily region family = do
   pure $ catMaybes matchedSpecies
 
 getImagesBySpecies
-  :: (MonadReader s m, HasFlickrConf s, MonadIO m)
+  :: ( MonadReader s m
+     , HasFlickrContext s
+     , MonadIO m
+     )
   => [Bird] -> m [SearchResultItem]
 getImagesBySpecies = getImages
 
@@ -66,22 +77,26 @@ getCorpus
      , MonadError e m
      , HasDbConfig r
      , HasEBirdConf r
-     , HasFlickrConf r
+     , HasFlickrContext r
      , AsEbirdError e
      )
   => Region -> Family -> m SearchResult
-getCorpus region family = do
-  matchedSpecies <- getSpeciesByRegionFamily region family
-  getImages matchedSpecies
+getCorpus region family =
+  getSpeciesByRegionFamily region family >>= getImages
 
--- Given a list of 'Bird's, get the final search result, by combining the common names and a list
--- of image URLs into a hashmap
-getImages :: (MonadReader s m, HasFlickrConf s, MonadIO m) => [Bird] -> m [SearchResultItem]
+-- Given a list of 'Bird's, get the final search result, by combining the common
+-- names and a list of image URLs into a hashmap
+getImages
+  :: ( MonadReader r m
+     , HasFlickrContext r
+     , MonadIO m
+     )
+  => [Bird] -> m [SearchResultItem]
 getImages birds = do
   let commonNames = map bCommonName birds
   zipWith SearchResultItem commonNames <$> getImageUrls
   where
     getImageUrls = do
-      apiKey <- asks (^. fcKey)
+      r <- ask
       liftIO $ Async.forConcurrently birds $
-        ServiceFlickr.searchPhotos apiKey . (uCommonName . bCommonName)
+        flip runReaderT r . runExceptT . ServiceFlickr.searchPhotos . (uCommonName . bCommonName)

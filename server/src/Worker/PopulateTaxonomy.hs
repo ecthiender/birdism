@@ -18,7 +18,7 @@ taxonomyUrl = "https://api.ebird.org/v2/ref/taxonomy/ebird"
 
 populateTaxonomy :: AppConfig -> IO ()
 populateTaxonomy config = do
-  ctx@AppCtx{..} <- initialiseAppCtx config
+  ctx <- initialiseAppCtx config
   truncateTaxonomyTable (ctx ^. dbConnection)
   resp <- runExceptT $ httpGet taxonomyUrl [("X-eBirdApiToken", T.encodeUtf8 $ (ctx ^. ebcToken))]
   case resp of

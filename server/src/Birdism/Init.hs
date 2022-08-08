@@ -12,6 +12,7 @@ import           Data.String                (fromString)
 import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Data
+import           Service.Flickr.Context     (FlickrContext (..), mkFlickrCache)
 
 initialiseAppCtx :: MonadIO m => AppConfig -> m AppCtx
 initialiseAppCtx (AppConfig dbUrl port ebird flickr) = do
@@ -21,7 +22,9 @@ initialiseAppCtx (AppConfig dbUrl port ebird flickr) = do
   -- create an in-memory cache of family names and region, as they don't change
   families <- runReaderT getFamilyNames dbConf
   regions  <- runReaderT getRegionNames dbConf
-  return $ AppCtx dbConf (fromMaybe defaultServerPort port) (FamiliesCache families) (RegionsCache regions) ebird flickr
+  flickrCache <- mkFlickrCache
+  let flickrCtx = FlickrContext flickr flickrCache
+  return $ AppCtx dbConf (fromMaybe defaultServerPort port) (FamiliesCache families) (RegionsCache regions) ebird flickrCtx
 
 initialiseDatabase :: MonadIO m => PG.Connection -> m ()
 initialiseDatabase conn = do

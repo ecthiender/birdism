@@ -171,9 +171,15 @@ class BirdPhoto {
   view (vnode) {
     const {photos, species} = vnode.attrs;
     // console.log(photos);
-    const res = photos.map((photo) => {
-      return m("img", {src: photo});
-    });
+    let res;
+    if ('error' in photos && photos.error) {
+      res = [m('p', 'Error with search.')]
+    }
+    else {
+      res = photos.map((photo) => {
+        return m("img", {src: photo});
+      });
+    }
     return m("div.card", [
       // m("img.card-img-top", {src: photos[0][0], height: photos[0][1], width: photos[0][1]}),
       m("div.card-body", [

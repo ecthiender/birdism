@@ -26,14 +26,14 @@ ebirdApiGetService
 ebirdApiGetService url = do
   r <- ask
   let token = r ^. ebcToken
-  resp <- runExceptT $ httpGetJSON url [("X-eBirdApiToken", T.encodeUtf8 token)]
+  resp <- runExceptT $ httpGetJSON url Nothing [("X-eBirdApiToken", T.encodeUtf8 token)]
   case resp of
     Left e    -> throwError $ httpErrToEbirdError e
     Right res -> return res
   where
     httpErrToEbirdError = \case
-      HREConnectionError e -> (_EbirdErrorUnexpected #) (T.pack $ show e)
-      HREUnexpectedRedirect _ r -> (_EbirdErrorUnexpected #) r
-      HREClientError _ e -> (_EbirdErrorUnexpected #) e
-      HREServerError _ e -> (_EbirdErrorUnexpected #) e
-      HREParseResponseFailed r e -> (_EbirdErrorParseResponse #) (T.pack e <> " : " <> r)
+      HREConnectionError e       -> _EbirdErrorUnexpected # T.pack (show e)
+      HREUnexpectedRedirect _ r  -> _EbirdErrorUnexpected # r
+      HREClientError _ e         -> _EbirdErrorUnexpected # e
+      HREServerError _ e         -> _EbirdErrorUnexpected # e
+      HREParseResponseFailed r e -> _EbirdErrorParseResponse # (T.pack e <> " : " <> r)
