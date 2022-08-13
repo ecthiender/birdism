@@ -1,10 +1,10 @@
 name:                birdism
-version:             0.2.2
+version:             0.3.0
 github:              "ecthiender/birdism"
 license:             BSD3
 author:              "Anon Ray"
 maintainer:          "rayanon004@gmail.com"
-copyright:           "2020 Anon Ray"
+copyright:           "2022 Anon Ray"
 
 extra-source-files:
 - README.md
