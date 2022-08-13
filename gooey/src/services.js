@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:8888/api'
+const API_HOST = process.env.REACT_APP_API_HOST
+const API_BASE_URL = `${API_HOST}/api`
 const ALL_REGIONS_URL = `${API_BASE_URL}/v1/regions`
 const ALL_FAMILIES_URL = `${API_BASE_URL}/v1/families`
 const SPECIES_SEARCH_URL = `${API_BASE_URL}/v1/search/species`
