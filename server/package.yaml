@@ -20,34 +20,26 @@ description:         Please see the README on Github at <https://github.com/ecth
 
 dependencies:
 - base >= 4.7 && < 5
-
 # use text for string-like everything
 - text
 # for efficient representation in some cases
 - bytestring
-
 # for our monad stack
 - mtl
-
 # for hashmap (using it in results)
 - hashable
 - unordered-containers
-
 # for database access
 - postgresql-simple
-
 # for making http requests to external APIs
 - wreq
 - http-client # for using the types
-
 # for parsing and building JSON request/responses
 - aeson
 - aeson-casing
 - lens
-
 # well who doesn't have to deal with date/time
 - time
-
 # for our http webserver
 - servant
 - servant-server
@@ -56,17 +48,11 @@ dependencies:
 - wai
 - wai-middleware-static
 - wai-extra
+- wai-cors
 - warp
-
 # async concurrency
 - async
-
-# for splitting large requests in batches
-- split
-
 - file-embed
-# for extra filesystem functions
-# - extra
 - say
 - retry
 - directory
