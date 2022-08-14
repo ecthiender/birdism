@@ -28,7 +28,7 @@ getFamilyNames = do
 ----------------- list of regions ---------------
 getRegionNamesQuery :: PG.Query
 getRegionNamesQuery =
-  "SELECT DISTINCT region_code, region_name FROM region"
+  "SELECT DISTINCT region_code, region_name FROM region ORDER BY region_code"
 
 getRegionNames
   :: ( MonadIO m

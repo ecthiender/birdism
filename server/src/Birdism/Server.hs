@@ -9,6 +9,7 @@ import           Servant                              (ServerError (..), err400,
 
 import qualified Data.Aeson                           as J
 import qualified Network.Wai                          as Wai
+import qualified Network.Wai.Middleware.Cors          as Cors
 import qualified Servant
 
 import           Birdism.Api                          (birdismApiServer, serverProxy)
@@ -28,9 +29,16 @@ newtype AppM a
 runAppM :: AppM a -> AppCtx -> IO (Either AppError a)
 runAppM app = runExceptT . runReaderT (unAppM app)
 
+ourCorsPolicy :: Cors.CorsResourcePolicy
+ourCorsPolicy =
+  Cors.simpleCorsResourcePolicy
+    { Cors.corsRequestHeaders = Cors.simpleHeaders
+    }
+
 httpApp :: AppCtx -> Wai.Application
 httpApp ctx =
   logStdoutDev
+  $ Cors.cors (const $ Just ourCorsPolicy)
   $ staticPolicy (addBase "../app/")
   $ serve serverProxy $ hoistServer serverProxy (appMToServantHandler ctx) birdismApiServer
 

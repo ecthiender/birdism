@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:sid-slim
 WORKDIR /birdism/server
 RUN apt-get -y update \
   && apt-get install -y libpq-dev ca-certificates \
@@ -7,5 +7,5 @@ RUN apt-get -y update \
   && rm -rf /var/lib/apt/lists/*
 ARG project_bin
 COPY ${project_bin} /birdism/server/
-COPY app /birdism/app
+COPY gooey/build /birdism/app
 CMD ["/birdism/server/birdism", "serve"]
