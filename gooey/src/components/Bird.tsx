@@ -7,24 +7,10 @@ import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
 import Skeleton from '@mui/material/Skeleton';
 
-interface ImageUrls {
-  state: 'success',
-  urls: string[]
-}
+import { SpeciesResult } from 'types/Birdism'
 
-interface FlickrError {
-  state: 'error',
-  code: string,
-  error: string,
-}
+const Bird: React.FC<SpeciesResult> = ({commonName, imageResult}) => {
 
-interface BirdProps {
-  commonName: string,
-  imageResult?: FlickrError | ImageUrls,
-}
-
-const Bird: React.FC<BirdProps> = ({imageResult, commonName}) => {
-  console.log('in Bird', commonName, imageResult)
   let imagesFC = null
 
   if (imageResult === undefined) {
@@ -77,7 +63,7 @@ const SpeciesImages: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) =>
   )
 }
 
-const SpeciesImagesPlaceholder: React.FC<{}> = ({}) => {
+const SpeciesImagesPlaceholder: React.FC<{}> = () => {
   return (
     <ImageList
       sx={{
@@ -100,4 +86,3 @@ const SpeciesImagesPlaceholder: React.FC<{}> = ({}) => {
 }
 
 export default Bird
-export type { BirdProps, FlickrError, ImageUrls }

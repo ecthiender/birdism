@@ -7,17 +7,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import SearchIcon from '@mui/icons-material/Search';
 import TextField from '@mui/material/TextField';
 
+import { Family, Region } from 'types/Birdism'
 import VirtualizedAutocomplete from 'components/VirtualizedAutocomplete';
-
-interface Family {
-  common_name: string,
-  scientific_name: string,
-}
-
-interface Region {
-  region_name: string,
-  region_code: string,
-}
 
 interface SearchFormProps {
   allFamilies: Family[],

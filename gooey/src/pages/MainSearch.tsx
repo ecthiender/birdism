@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 
+import { Region, Family, SpeciesResult } from 'types/Birdism'
 import { getAllRegions, getAllFamilies, getSpecies, getImages } from 'services'
 import SearchResult from 'components/SearchResult'
 import SearchErrors from 'components/SearchErrors'
-import SearchForm, { Region, Family } from 'components/SearchForm'
-import { BirdProps } from 'components/Bird'
+import SearchForm from 'components/SearchForm'
 
 export default function MainSearch() {
   const [allRegions, setAllRegions] = useState<Region[]>([])
@@ -14,7 +14,7 @@ export default function MainSearch() {
   const [region, setRegion] = useState<Region | null>(null)
   const [family, setFamily] = useState<Family | null>(null)
 
-  const [results, setResults] = useState<BirdProps[]>([])
+  const [results, setResults] = useState<SpeciesResult[]>([])
   const [noResults, setNoResults] = useState<boolean>(false)
   const [searching, setSearching] = useState<boolean>(false)
   const [searchErrs, setSearchErrs] = useState<string | null>(null)

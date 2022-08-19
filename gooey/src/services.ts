@@ -1,6 +1,10 @@
-import { Region, Family } from 'components/SearchForm'
-import { ImageUrls, FlickrError } from 'components/Bird'
-import { BirdProps } from 'components/Bird'
+import {
+  Region,
+  Family,
+  ImageUrls,
+  FlickrError,
+  SpeciesResult,
+} from 'types/Birdism'
 
 const API_HOST = process.env.REACT_APP_API_HOST
 const API_BASE_URL = `${API_HOST}/api`
@@ -17,7 +21,7 @@ interface ApiResponse {
 }
 
 interface ApiResult {
-  result: BirdProps[]
+  result: SpeciesResult[]
 }
 
 async function getAllRegions(): Promise<Region[]> {

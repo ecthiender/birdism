@@ -1,10 +1,11 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import Bird, { BirdProps } from 'components/Bird'
+import { SpeciesResult } from 'types/Birdism'
+import Bird from 'components/Bird'
 
 interface SearchResultProps {
-  results: BirdProps[],
+  results: SpeciesResult[],
   noResults: boolean,
 }
 
