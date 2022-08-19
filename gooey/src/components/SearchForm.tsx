@@ -7,9 +7,30 @@ import CircularProgress from '@mui/material/CircularProgress';
 import SearchIcon from '@mui/icons-material/Search';
 import TextField from '@mui/material/TextField';
 
-import VirtualizedAutocomplete from './VirtualizedAutocomplete';
+import VirtualizedAutocomplete from 'components/VirtualizedAutocomplete';
 
-export default function SearchForm(props) {
+interface Family {
+  common_name: string,
+  scientific_name: string,
+}
+
+interface Region {
+  region_name: string,
+  region_code: string,
+}
+
+interface SearchFormProps {
+  allFamilies: Family[],
+  allRegions: Region[],
+  selectedFamily: Family | null,
+  setSelectedFamily: any,
+  selectedRegion: Region | null,
+  setSelectedRegion: any,
+  searchAction: any,
+  searching: boolean,
+}
+
+const SearchForm: React.FC<SearchFormProps> = (props) => {
 
   const {
     allFamilies,
@@ -52,11 +73,11 @@ export default function SearchForm(props) {
         options={allRegions}
         // groupBy={(option) => option.country_code}
         filterOptions={regionFilter}
-        isOptionEqualToValue={(option, value) => option.region_code === value.region_code}
-        getOptionLabel={(option) => `${option.region_name} (${option.region_code})`}
+        isOptionEqualToValue={(option: Region, value: Region) => option.region_code === value.region_code}
+        getOptionLabel={(option: Region) => `${option.region_name} (${option.region_code})`}
         value={selectedRegion}
-        onChange={(ev, newVal) => setSelectedRegion(newVal)}
-        renderInput={(params) => <TextField {...params} label="Region" />}
+        onChange={(ev: any, newVal: Region) => setSelectedRegion(newVal)}
+        renderInput={(params: any) => <TextField {...params} label="Region" />}
       />
       <Box>
         <Button
@@ -75,9 +96,12 @@ export default function SearchForm(props) {
 }
 
 const familyFilter = createFilterOptions({
-  stringify: (option) => option.common_name
+  stringify: (option: Family) => option.common_name
 });
 
 const regionFilter = createFilterOptions({
-  stringify: (option) => option.region_name,
+  stringify: (option: Region) => option.region_name,
 });
+
+export default SearchForm
+export type { SearchFormProps, Region, Family }
