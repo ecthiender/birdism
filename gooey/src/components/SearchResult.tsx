@@ -1,9 +1,16 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import Bird from './Bird'
+import { SpeciesResult } from 'types/Birdism'
+import Bird from 'components/Bird'
 
-export default function SearchResult({results, noResults}) {
+interface SearchResultProps {
+  results: SpeciesResult[],
+  noResults: boolean,
+}
+
+const SearchResult: React.FC<SearchResultProps> = ({results, noResults}) => {
+  console.log('results', results)
   return (
     <>
       <Box sx={{m: 2}}>
@@ -20,3 +27,5 @@ export default function SearchResult({results, noResults}) {
     </>
   );
 }
+
+export default SearchResult
