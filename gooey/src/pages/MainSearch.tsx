@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useReducer } from 'react';
 import Box from '@mui/material/Box';
 
 import { Region, Family, SpeciesResult } from 'types/Birdism'
@@ -6,18 +6,20 @@ import { getAllRegions, getAllFamilies, getSpecies, getImages } from 'services'
 import SearchResult from 'components/SearchResult'
 import SearchErrors from 'components/SearchErrors'
 import SearchForm from 'components/SearchForm'
+import { initialMainSearchState, mainSearchReducer } from 'reducers/mainSearchReducer'
 
 export default function MainSearch() {
-  const [allRegions, setAllRegions] = useState<Region[]>([])
-  const [allFamilies, setAllFamilies] = useState<Family[]>([])
+  const [state, dispatch] = useReducer(mainSearchReducer, initialMainSearchState)
+  // const [allRegions, setAllRegions] = useState<Region[]>([])
+  // const [allFamilies, setAllFamilies] = useState<Family[]>([])
 
-  const [region, setRegion] = useState<Region | null>(null)
-  const [family, setFamily] = useState<Family | null>(null)
+  // const [region, setRegion] = useState<Region | null>(null)
+  // const [family, setFamily] = useState<Family | null>(null)
 
-  const [results, setResults] = useState<SpeciesResult[]>([])
-  const [noResults, setNoResults] = useState<boolean>(false)
-  const [searching, setSearching] = useState<boolean>(false)
-  const [searchErrs, setSearchErrs] = useState<string | null>(null)
+  // const [results, setResults] = useState<SpeciesResult[]>([])
+  // const [noResults, setNoResults] = useState<boolean>(false)
+  // const [searching, setSearching] = useState<boolean>(false)
+  // const [searchErrs, setSearchErrs] = useState<string | null>(null)
 
   useEffect(() => {
     // fetch regions
@@ -28,14 +30,14 @@ export default function MainSearch() {
 
   const runSearch = async () => {
     setSearchErrs(null)
-    if (family === null || region === null) {
+    if (state.family === null || state.region === null) {
       setSearchErrs('Please select a region and a family.')
       return
     }
     setSearching(true)
     const payload = {
-      family: family.scientific_name,
-      region: region.region_code,
+      family: state.family.scientific_name,
+      region: state.region.region_code,
     }
     try {
       const data = await getSpecies(payload)
@@ -62,17 +64,17 @@ export default function MainSearch() {
   return (
     <Box>
       <SearchForm
-        allFamilies={allFamilies}
-        allRegions={allRegions}
-        selectedFamily={family}
+        allFamilies={state.allFamilies}
+        allRegions={state.allRegions}
+        selectedFamily={state.family}
         setSelectedFamily={setFamily}
-        selectedRegion={region}
+        selectedRegion={state.region}
         setSelectedRegion={setRegion}
         searchAction={runSearch}
-        searching={searching}
+        searching={state.searching}
       />
-      <SearchErrors errors={searchErrs} />
-      <SearchResult results={results} noResults={noResults} />
+      <SearchErrors errors={state.searchErrs} />
+      <SearchResult results={state.results} noResults={state.noResults} />
     </Box>
   )
 }
