@@ -1,4 +1,4 @@
-FROM rayanon/birdism:v0.3.0
+FROM rayanon/birdism:v0.3.1
 
 ENV BIRDISM_ENV=production
 
