@@ -39,6 +39,7 @@ const SearchForm: React.FC<SearchFormProps> = (props) => {
     <Stack
       spacing={{ xs: 1, sm: 2, md: 4 }}
       direction={{ xs: 'column', sm: 'row' }}
+      alignItems={{xs: 'center', sm: 'left'}}
       sx={{m: 2}}
     >
       <Autocomplete
@@ -73,8 +74,7 @@ const SearchForm: React.FC<SearchFormProps> = (props) => {
           startIcon={<SearchIcon/>}
           sx={{
             width: 300,
-            minHeight: '99%',
-            height: {xs: 50, sm: '100%'},
+            height: 50,
             marginTop: {xs: 2, sm: 0},
           }}
         >

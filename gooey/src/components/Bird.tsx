@@ -8,9 +8,10 @@ import CardContent from '@mui/material/CardContent';
 import Skeleton from '@mui/material/Skeleton';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import Carousel from "react-material-ui-carousel";
+import { CarouselProps } from 'react-material-ui-carousel/dist/components/types';
 
 import { SpeciesResult } from 'types/Birdism'
-import Carousel from 'components/Carousel'
 
 const Bird: React.FC<SpeciesResult> = ({commonName, imageResult}) => {
 
@@ -38,7 +39,7 @@ const Bird: React.FC<SpeciesResult> = ({commonName, imageResult}) => {
   }
 
   return (
-    <Box sx={{marginTop: 1, minWidth: 300}}>
+    <Box sx={{marginTop: 1, minWidth: 300, width: {xs: 'calc(100vw - 10px)', sm: '95%'}}}>
       <Card>
         <CardHeader title={commonName} />
         <CardContent>
@@ -73,12 +74,40 @@ const SpeciesImagesRow: React.FC<SpeciesImagesProps> = ({imageUrls, commonName})
   )
 }
 
-const SpeciesImagesCarousel: React.FC<SpeciesImagesProps> = ({imageUrls}) => {
-  const images = imageUrls.map(photo => ({imgPath: photo}));
+const carouselSettings: CarouselProps = {
+  autoPlay: false,
+  animation: "slide",
+  indicators: true,
+  navButtonsAlwaysVisible: true,
+  cycleNavigation: true,
+  fullHeightHover: true,
+  swipe: true
+};
+
+const SpeciesImagesCarousel: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) => {
   return (
-    <Carousel images={images} />
+    <Carousel {...carouselSettings}>
+      {
+        imageUrls.map((photo, index) => (
+          <div key={index}>
+            <Box
+              component="img"
+              src={photo}
+              alt={commonName}
+              sx={{
+                height: 255,
+                display: 'block',
+                maxWidth: 400,
+                overflow: 'hidden',
+                width: '100%',
+              }}
+            />
+          </div>
+        ))
+      }
+    </Carousel>
   );
-}
+};
 
 const SpeciesImagesPlaceholder: React.FC<{}> = () => {
   return (
