@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 import Box from '@mui/material/Box';
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
@@ -6,12 +6,18 @@ import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
 import Skeleton from '@mui/material/Skeleton';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import Carousel from "react-material-ui-carousel";
+import { CarouselProps } from 'react-material-ui-carousel/dist/components/types';
 
 import { SpeciesResult } from 'types/Birdism'
 
 const Bird: React.FC<SpeciesResult> = ({commonName, imageResult}) => {
 
-  let imagesFC = null
+  let imagesFC = null;
+  const theme = useTheme();
+  const notMobileScreen = useMediaQuery(theme.breakpoints.up('sm'));
 
   if (imageResult === undefined) {
     imagesFC = (<SpeciesImagesPlaceholder />)
@@ -22,13 +28,18 @@ const Bird: React.FC<SpeciesResult> = ({commonName, imageResult}) => {
         imagesFC = (<p>Error with search</p>)
         break
       case 'success':
-        imagesFC = (<SpeciesImages imageUrls={imageResult.urls} commonName={commonName} />)
+        if (notMobileScreen) {
+          imagesFC = (<SpeciesImagesRow imageUrls={imageResult.urls} commonName={commonName} />)
+        }
+        else {
+          imagesFC = (<SpeciesImagesCarousel imageUrls={imageResult.urls} commonName={commonName} />)
+        }
         break
     }
   }
 
   return (
-    <Box sx={{marginTop: 1, minWidth: 300}}>
+    <Box sx={{marginTop: 1, minWidth: 300, width: {xs: 'calc(100vw - 10px)', sm: '95%'}}}>
       <Card>
         <CardHeader title={commonName} />
         <CardContent>
@@ -44,7 +55,7 @@ interface SpeciesImagesProps {
   commonName: string,
 }
 
-const SpeciesImages: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) => {
+const SpeciesImagesRow: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) => {
   // https://stackoverflow.com/questions/69597992/how-to-implement-horizontal-scrolling-of-tiles-in-mui-gridlist
   return (
     <ImageList
@@ -62,6 +73,41 @@ const SpeciesImages: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) =>
     </ImageList>
   )
 }
+
+const carouselSettings: CarouselProps = {
+  autoPlay: false,
+  animation: "slide",
+  indicators: true,
+  navButtonsAlwaysVisible: true,
+  cycleNavigation: true,
+  fullHeightHover: true,
+  swipe: true
+};
+
+const SpeciesImagesCarousel: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) => {
+  return (
+    <Carousel {...carouselSettings}>
+      {
+        imageUrls.map((photo, index) => (
+          <div key={index}>
+            <Box
+              component="img"
+              src={photo}
+              alt={commonName}
+              sx={{
+                height: 255,
+                display: 'block',
+                maxWidth: 400,
+                overflow: 'hidden',
+                width: '100%',
+              }}
+            />
+          </div>
+        ))
+      }
+    </Carousel>
+  );
+};
 
 const SpeciesImagesPlaceholder: React.FC<{}> = () => {
   return (

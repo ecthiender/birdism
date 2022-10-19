@@ -10,7 +10,6 @@ interface SearchResultProps {
 }
 
 const SearchResult: React.FC<SearchResultProps> = ({results, noResults}) => {
-  console.log('results', results)
   return (
     <>
       <Box sx={{m: 2}}>
