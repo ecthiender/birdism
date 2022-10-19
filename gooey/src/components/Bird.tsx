@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 import Box from '@mui/material/Box';
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
@@ -6,12 +6,17 @@ import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
 import Skeleton from '@mui/material/Skeleton';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 import { SpeciesResult } from 'types/Birdism'
+import Carousel from 'components/Carousel'
 
 const Bird: React.FC<SpeciesResult> = ({commonName, imageResult}) => {
 
-  let imagesFC = null
+  let imagesFC = null;
+  const theme = useTheme();
+  const notMobileScreen = useMediaQuery(theme.breakpoints.up('sm'));
 
   if (imageResult === undefined) {
     imagesFC = (<SpeciesImagesPlaceholder />)
@@ -22,7 +27,12 @@ const Bird: React.FC<SpeciesResult> = ({commonName, imageResult}) => {
         imagesFC = (<p>Error with search</p>)
         break
       case 'success':
-        imagesFC = (<SpeciesImages imageUrls={imageResult.urls} commonName={commonName} />)
+        if (notMobileScreen) {
+          imagesFC = (<SpeciesImagesRow imageUrls={imageResult.urls} commonName={commonName} />)
+        }
+        else {
+          imagesFC = (<SpeciesImagesCarousel imageUrls={imageResult.urls} commonName={commonName} />)
+        }
         break
     }
   }
@@ -44,7 +54,7 @@ interface SpeciesImagesProps {
   commonName: string,
 }
 
-const SpeciesImages: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) => {
+const SpeciesImagesRow: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) => {
   // https://stackoverflow.com/questions/69597992/how-to-implement-horizontal-scrolling-of-tiles-in-mui-gridlist
   return (
     <ImageList
@@ -61,6 +71,13 @@ const SpeciesImages: React.FC<SpeciesImagesProps> = ({imageUrls, commonName}) =>
       ))}
     </ImageList>
   )
+}
+
+const SpeciesImagesCarousel: React.FC<SpeciesImagesProps> = ({imageUrls}) => {
+  const images = imageUrls.map(photo => ({imgPath: photo}));
+  return (
+    <Carousel images={images} />
+  );
 }
 
 const SpeciesImagesPlaceholder: React.FC<{}> = () => {

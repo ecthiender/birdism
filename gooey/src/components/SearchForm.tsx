@@ -1,6 +1,7 @@
 import Autocomplete from '@mui/material/Autocomplete';
 import { createFilterOptions } from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 // import LoadingButton from '@mui/lab/LoadingButton';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -35,16 +36,10 @@ const SearchForm: React.FC<SearchFormProps> = (props) => {
   } = props
 
   return (
-    <Box
-      component="form"
-      sx={{
-        'width': '75%',
-        'display': 'flex',
-        'flexDirection': 'row',
-        '& > :not(style)': { m: 1, width: '40ch' },
-      }}
-      noValidate
-      autoComplete="off"
+    <Stack
+      spacing={{ xs: 1, sm: 2, md: 4 }}
+      direction={{ xs: 'column', sm: 'row' }}
+      sx={{m: 2}}
     >
       <Autocomplete
         disablePortal
@@ -76,13 +71,18 @@ const SearchForm: React.FC<SearchFormProps> = (props) => {
           onClick={searchAction}
           disabled={searching}
           startIcon={<SearchIcon/>}
-          sx={{minHeight: '99%', minWidth: 140}}
+          sx={{
+            width: 300,
+            minHeight: '99%',
+            height: {xs: 50, sm: '100%'},
+            marginTop: {xs: 2, sm: 0},
+          }}
         >
           {searching ? 'Searching...' : 'Search'}
           {searching && (<CircularProgress size={24} />)}
         </Button>
       </Box>
-    </Box>
+    </Stack>
   )
 }
 
