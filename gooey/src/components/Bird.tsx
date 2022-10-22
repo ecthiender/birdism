@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import ImageList from '@mui/material/ImageList';
+import Link from '@mui/material/Link';
 import ImageListItem from '@mui/material/ImageListItem';
 import Card from '@mui/material/Card';
 import Avatar from '@mui/material/Avatar';
@@ -50,10 +51,27 @@ const Bird: React.FC<SpeciesResult> = ({commonName, speciesCode}) => {
   }
 
   return (
-    <Box sx={{marginTop: 1, marginBottom: 2, minWidth: 300, width: {xs: 'calc(100vw - 10px)', sm: '95%'}}}>
+    <Box
+      sx={{
+        marginTop: 1,
+        marginBottom: 2,
+        minWidth: 300,
+        width: {xs: 'calc(100vw - 10px)', sm: '95%'}
+      }}
+    >
       <Card>
         <CardHeader
-          title={commonName}
+          title={
+            <Link
+              href={`https://ebird.org/species/${speciesCode}`}
+              color="inherit"
+              underline="none"
+              target="_blank"
+              rel="noopener"
+            >
+              {commonName}
+            </Link>
+          }
           titleTypographyProps={{fontSize: 24}}
           avatar={<Avatar>{commonName.split(' ').map((part) => part[0])}</Avatar>}
           action={
@@ -140,13 +158,13 @@ const SpeciesImagesPlaceholder: React.FC<{}> = () => {
       }}
     >
       <ImageListItem key={1}>
-        <Skeleton variant="rectangular" width={300} height={200} />
+        <Skeleton variant="rectangular" width={300} height={250} />
       </ImageListItem>
       <ImageListItem key={2}>
-        <Skeleton variant="rectangular" width={300} height={200} />
+        <Skeleton variant="rectangular" width={300} height={250} />
       </ImageListItem>
       <ImageListItem key={3}>
-        <Skeleton variant="rectangular" width={300} height={200} />
+        <Skeleton variant="rectangular" width={300} height={250} />
       </ImageListItem>
     </ImageList>
   )
