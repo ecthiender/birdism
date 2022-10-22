@@ -4,6 +4,7 @@ import {
   ImageUrls,
   FlickrError,
   SpeciesResult,
+  ImageResult,
 } from 'types/Birdism'
 
 const API_HOST = process.env.REACT_APP_API_HOST
@@ -16,6 +17,7 @@ const IMAGES_SEARCH_URL = `${API_BASE_URL}/v1/search/images`
 interface ApiResponse {
   result: Array<{
     common_name: string,
+    species_code: string,
     image_urls?: any
   }>
 }
@@ -46,6 +48,11 @@ async function getImages(commonNames: string[]): Promise<ApiResult> {
     .then(data => responseToResult(data))
 }
 
+async function getImagesBySpecies(speciesCode: string): Promise<ImageResult> {
+  return fetch(IMAGES_SEARCH_URL, postOptions({species_code: speciesCode}))
+    .then(response => response.json())
+}
+
 function postOptions<T> (payload: T): object {
   return {
     method: 'POST',
@@ -57,7 +64,7 @@ function postOptions<T> (payload: T): object {
   }
 }
 
-export { getAllRegions, getAllFamilies, getSpecies, getImages }
+export { getAllRegions, getAllFamilies, getSpecies, getImages, getImagesBySpecies }
 
 /*
  * helper functions
@@ -66,6 +73,7 @@ export { getAllRegions, getAllFamilies, getSpecies, getImages }
 function responseToResult(resp: ApiResponse): ApiResult {
   let transformed = resp.result.map(r => ({
     commonName: r.common_name,
+    speciesCode: r.species_code,
     imageResult: transformImageUrls(r?.image_urls)
   }))
   return {result: transformed}

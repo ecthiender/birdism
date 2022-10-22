@@ -2,18 +2,19 @@ module Birdism.Lib
   ( getCorpus
   , getSpeciesByRegionFamily
   , getImagesBySpecies
+  , getImagesOfManySpecies
   , Family
   , Region (..)
   , SearchResult
   , SearchResultItem (..)
   , CommonName
-  , ImgUrl
+  , ImgUrl (..)
   ) where
 
 import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Types
-import           Service.Flickr.Context   (FlickrError)
+import           Service.Flickr.Context   (FlickrError, AsFlickrError)
 
 import qualified Control.Concurrent.Async as Async
 import qualified Data.Aeson               as J
@@ -21,8 +22,11 @@ import qualified Data.Aeson               as J
 import qualified Birdism.Data             as Data
 import qualified Service.Ebird            as ServiceEbird
 import qualified Service.Flickr.Photos    as ServiceFlickr
+import Control.Lens ((#))
 
-type ImgUrl = Text
+newtype ImgUrl = ImgUrl { unImgUrl :: Text }
+  deriving stock (Show, Eq)
+  deriving newtype (J.ToJSON, J.FromJSON)
 
 -- Corpus is the result type of this program. This basically means the corpus
 -- (images of birds) for the end user to study
@@ -66,12 +70,31 @@ getSpeciesByRegionFamily region family = do
 
 getImagesBySpecies
   :: ( MonadReader r m
+     , MonadError e m
+     , AsFlickrError e
+     , AsApiError e
+     , HasDbConfig r
+     , HasFlickrConf r
+     , HasBirdismCache r
+     , MonadIO m
+     )
+  => SpeciesCode -> m [ImgUrl]
+getImagesBySpecies spCode = do
+  maybeBird <- Data.makeBirdFromCode spCode
+  case maybeBird of
+    Nothing -> throwError $ _ApiErrorSearchInvalidSpeciesCode # ()
+    Just bird -> do
+      let commonName = uCommonName $ bCommonName bird
+      (fmap.fmap) ImgUrl $ ServiceFlickr.searchPhotos commonName {- HLINT ignore "Use <$>" -}
+
+getImagesOfManySpecies
+  :: ( MonadReader r m
      , HasFlickrConf r
      , HasBirdismCache r
      , MonadIO m
      )
   => [CommonName] -> m [SearchResultItem]
-getImagesBySpecies = getImages
+getImagesOfManySpecies = getImages
 
 getCorpus
   :: ( MonadIO m
@@ -97,7 +120,9 @@ getImages
      )
   => [CommonName] -> m [SearchResultItem]
 getImages birds = do
-  zipWith SearchResultItem birds <$> getImageUrls
+  urlTxts <- getImageUrls
+  let urls = (fmap.fmap.fmap) ImgUrl urlTxts
+  pure $ zipWith SearchResultItem birds urls
   where
     getImageUrls = do
       r <- ask

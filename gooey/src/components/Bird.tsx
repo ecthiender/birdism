@@ -3,6 +3,9 @@ import Box from '@mui/material/Box';
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
 import Card from '@mui/material/Card';
+import Avatar from '@mui/material/Avatar';
+import IconButton  from '@mui/material/IconButton';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
 import Skeleton from '@mui/material/Skeleton';
@@ -11,37 +14,55 @@ import { useTheme } from '@mui/material/styles';
 import Carousel from "react-material-ui-carousel";
 import { CarouselProps } from 'react-material-ui-carousel/dist/components/types';
 
-import { SpeciesResult } from 'types/Birdism'
+import { SpeciesResult, ImageResult } from 'types/Birdism'
+import { getImagesBySpecies } from 'services';
 
-const Bird: React.FC<SpeciesResult> = ({commonName, imageResult}) => {
+const Bird: React.FC<SpeciesResult> = ({commonName, speciesCode}) => {
 
   let imagesFC = null;
   const theme = useTheme();
   const notMobileScreen = useMediaQuery(theme.breakpoints.up('sm'));
+  const [imageUrls, setImageUrls] = React.useState<ImageResult|null>(null);
+  const [searchError, setSearchError] = React.useState<string|null>(null);
 
-  if (imageResult === undefined) {
+  React.useEffect(() => {
+    setSearchError(null);
+    setImageUrls(null);
+    getImagesBySpecies(speciesCode)
+      .then(setImageUrls)
+      .catch((e) => setSearchError(e.toString()))
+  }, [speciesCode]);
+
+
+  if (imageUrls === null) {
     imagesFC = (<SpeciesImagesPlaceholder />)
   }
+  else if (searchError !== null) {
+    imagesFC = (<p>Error with search</p>)
+  }
   else {
-    switch (imageResult.state) {
-      case 'error':
-        imagesFC = (<p>Error with search</p>)
-        break
-      case 'success':
-        if (notMobileScreen) {
-          imagesFC = (<SpeciesImagesRow imageUrls={imageResult.urls} commonName={commonName} />)
-        }
-        else {
-          imagesFC = (<SpeciesImagesCarousel imageUrls={imageResult.urls} commonName={commonName} />)
-        }
-        break
+    if (notMobileScreen) {
+      imagesFC = (<SpeciesImagesRow imageUrls={imageUrls.result} commonName={commonName} />)
+    }
+    else {
+      imagesFC = (<SpeciesImagesCarousel imageUrls={imageUrls.result} commonName={commonName} />)
     }
   }
 
   return (
-    <Box sx={{marginTop: 1, minWidth: 300, width: {xs: 'calc(100vw - 10px)', sm: '95%'}}}>
+    <Box sx={{marginTop: 1, marginBottom: 2, minWidth: 300, width: {xs: 'calc(100vw - 10px)', sm: '95%'}}}>
       <Card>
-        <CardHeader title={commonName} />
+        <CardHeader
+          title={commonName}
+          titleTypographyProps={{fontSize: 24}}
+          avatar={<Avatar>{commonName.split(' ').map((part) => part[0])}</Avatar>}
+          action={
+            <IconButton>
+              <ExpandMoreIcon />
+            </IconButton>
+          }
+        />
+
         <CardContent>
           {imagesFC}
         </CardContent>

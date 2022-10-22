@@ -18,7 +18,7 @@ const SearchResult: React.FC<SearchResultProps> = ({results, noResults}) => {
       <Box sx={{m: 2}}>
         {results?.length ? (<Typography> {results?.length} species found </Typography>) : null}
       </Box>
-      <Box sx={{display: 'flex', minHeight: '50vh', m: 1}}>
+      <Box sx={{display: 'flex', minHeight: {xs: '50vh', sm: '60vh'}, m: 1}}>
         <Box>
           {results.map((bird, idx) => <Bird {...bird} key={idx} />)}
         </Box>

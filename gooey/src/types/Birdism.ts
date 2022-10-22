@@ -21,7 +21,12 @@ interface FlickrError {
 
 interface SpeciesResult {
   commonName: string,
+  speciesCode: string,
   imageResult?: FlickrError | ImageUrls,
 }
 
-export type { Family, Region, ImageUrls, FlickrError, SpeciesResult }
+interface ImageResult {
+  result: string[]
+}
+
+export type { Family, Region, ImageUrls, FlickrError, SpeciesResult, ImageResult }
