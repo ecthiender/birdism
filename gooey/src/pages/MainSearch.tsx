@@ -1,12 +1,8 @@
 import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
-//import Typography from '@mui/material/Typography'
-//import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-//import Stack from '@mui/material/Stack'
-
 import { Region, Family, SpeciesResult } from 'types/Birdism'
-import { getAllRegions, getAllFamilies, getSpecies, getImages } from 'services'
+import { getAllRegions, getAllFamilies, getSpecies } from 'services'
 import SearchResult from 'components/SearchResult'
 import SearchErrors from 'components/SearchErrors'
 import SearchForm from 'components/SearchForm'
@@ -50,9 +46,6 @@ export default function MainSearch() {
         setNoResults(true)
         return
       }
-      const commonNames = data.result.map(sp => sp.commonName)
-      const images = await getImages(commonNames)
-      setResults(images.result)
     }
     catch (err: any) {
       console.error('search images error', err)
@@ -81,25 +74,3 @@ export default function MainSearch() {
     </Box>
   )
 }
-
-/*
-function InfoHeading() {
-  return (
-    <Stack direction="row"
-      marginLeft={2}
-      marginBottom={{xs: 3, sm: 4, md: 5}}
-      sx={{
-        backgroundColor: '#eee',
-        padding: 2,
-        borderRadius: 2,
-        width: {xs: 300, sm: 500},
-      }}
-    >
-      <InfoOutlinedIcon fontSize="medium" sx={{marginRight: 1, color: '#333'}} />
-      <Typography color="#333" sx={{fontSize: 14}}>
-        Search for a family of birds in a specific region
-      </Typography>
-    </Stack>
-  );
-}
-*/

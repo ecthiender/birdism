@@ -16,8 +16,8 @@ export default function Header() {
         <Box>
           <Typography variant="h2" component="div"> Birdism </Typography>
           <Typography variant="subtitle1" gutterBottom component="div">
-            Bird identification and more
-            {/* Search for a family of birds in a region */}
+            {/* Bird identification and more */}
+            Search for a family of birds in a region
           </Typography>
         </Box>
         <Box>

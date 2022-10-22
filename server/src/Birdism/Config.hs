@@ -7,6 +7,8 @@ module Birdism.Config
   , AppError (..)
   , EbirdError (..)
   , AsEbirdError (..)
+  , ApiError (..)
+  , AsApiError (..)
   , EBirdConf (..)
   , ebcToken
   , FlickrConf (..)
@@ -148,11 +150,25 @@ $(J.deriveToJSON
                    , J.sumEncoding = J.TaggedObject "code" "error"
                    } ''EbirdError)
 
+data ApiError
+  = ApiErrorSearchInvalidSpeciesCode !()
+  | ApiErrorSearchInvalidFamilyCode !()
+  deriving (Show)
+
+instance J.ToJSON ApiError where
+  toJSON = \case
+    ApiErrorSearchInvalidSpeciesCode _ -> "Invalid species code"
+    ApiErrorSearchInvalidFamilyCode _ -> "Invalid family code"
+
+makeClassyPrisms ''ApiError
+
 data AppError
   = AEEbirdError !EbirdError
   | AEFlickrError !FlickrError
   | AEDbError !DbError
   | AEConfigError !Text
+  -- | Errors from Birdism's core API logic
+  | AEApiError !ApiError
   deriving (Show)
 
 makeClassyPrisms ''AppError
@@ -166,12 +182,16 @@ instance AsDbError AppError where
 instance AsFlickrError AppError where
   _FlickrError = _AEFlickrError . _FlickrError
 
+instance AsApiError AppError where
+  _ApiError = _AEApiError . _ApiError
+
 instance J.ToJSON AppError where
   toJSON a = case a of
     AEEbirdError e  -> J.toJSON e
     AEFlickrError e -> J.toJSON e
     AEDbError e     -> J.toJSON e
     AEConfigError e -> J.toJSON e
+    AEApiError e -> J.toJSON e
 
 encodeErr :: Text -> Text -> J.Value
 encodeErr code e =

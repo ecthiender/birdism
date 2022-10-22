@@ -29,18 +29,21 @@ instance ToSample FamilyScientificNameResponse where
             , Family (ScientificName "Brachypteraciidae") (CommonName "Ground-Rollers")
             ]
 
+
+imgUrlSamples :: [ImgUrl]
+imgUrlSamples =
+  map ImgUrl [ "https://live.staticflickr.com/xxxx/yyyyyyyyyyyy_xxxxxxxxx.jpg"
+             , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
+             , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
+             ]
+
+instance ToSample ImgUrl where
+  toSamples _ = samples imgUrlSamples
+
 searchResults :: [SearchResultItem]
 searchResults =
-  [ SearchResultItem (CommonName "Pied Cuckoo") $
-      Right [ "https://live.staticflickr.com/xxxx/yyyyyyyyyyyy_xxxxxxxxx.jpg"
-            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
-            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxx.jpg"
-            ]
-  , SearchResultItem (CommonName "Asian Koel") $
-      Right [ "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-            , "https://live.staticflickr.com/xxxxx/yyyyyyyyyyy_xxxxxxxxxx.jpg"
-            ]
+  [ SearchResultItem (CommonName "Pied Cuckoo") $ Right imgUrlSamples
+  , SearchResultItem (CommonName "Asian Koel") $ Right imgUrlSamples
   ]
 
 instance ToSample SearchResultItem where
@@ -90,6 +93,11 @@ instance ToSample RedirectLocation where
 instance ToSample CommonName where
   toSamples _ = samples [ CommonName "Barn Owl"
                         , CommonName "Blue-faced Malkoha"
+                        ]
+
+instance ToSample SpeciesImageSearchRequest where
+  toSamples _ = samples [ SpeciesImageSearchRequest (SpeciesCode "blfmal1")
+                        , SpeciesImageSearchRequest (SpeciesCode "brnowl")
                         ]
 
 apiDocs :: API

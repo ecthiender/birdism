@@ -11,6 +11,7 @@ import           Birdism.Types
 import           Control.Lens
 import           GHC.TypeLits      (Nat)
 import           Servant
+import Service.Flickr.Context (AsFlickrError)
 
 
 type BirdismHttpAPIF f
@@ -26,7 +27,7 @@ type BirdismHttpAPIF f
 
   :<|> "api" :> "v1" :> "search" :> ReqBody '[JSON] SearchRequest :> Post '[JSON] (f SearchResult)
   :<|> "api" :> "v1" :> "search" :> "species" :> ReqBody '[JSON] SearchRequest :> Post '[JSON] (f [Bird])
-  :<|> "api" :> "v1" :> "search" :> "images" :> ReqBody '[JSON] [CommonName] :> Post '[JSON] (f SearchResult)
+  :<|> "api" :> "v1" :> "search" :> "images" :> ReqBody '[JSON] SpeciesImageSearchRequest :> Post '[JSON] (f [ImgUrl])
 
 
 type BirdismHttpAPI = BirdismHttpAPIF ApiResponse
@@ -84,6 +85,18 @@ instance J.FromJSON SearchRequest where
 instance J.ToJSON SearchRequest where
   toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
+{- HLINT ignore "Use newtype instead of data" -}
+data SpeciesImageSearchRequest
+  = SpeciesImageSearchRequest
+  { _sisrSpeciesCode :: !SpeciesCode
+  } deriving (Show, Eq, Generic)
+
+instance J.FromJSON SpeciesImageSearchRequest where
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
+
+instance J.ToJSON SpeciesImageSearchRequest where
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
+
 processSearch
   :: ( MonadIO m
      , MonadReader r m
@@ -121,12 +134,16 @@ processSpeciesSearch (SearchRequest regionCode familySciName) = do
 
 processImageSearch
   :: ( MonadReader r m
+     , MonadError e m
+     , AsFlickrError e
+     , AsApiError e
      , HasFlickrConf r
      , HasBirdismCache r
+     , HasDbConfig r
      , MonadIO m
      )
-  => [CommonName] -> m SearchResult
-processImageSearch = getImagesBySpecies
+  => SpeciesImageSearchRequest -> m [ImgUrl]
+processImageSearch = getImagesBySpecies . _sisrSpeciesCode
 
 newtype FamilyScientificNameRequest
   = FamilyScientificNameRequest { _gfsnrName :: CommonName }

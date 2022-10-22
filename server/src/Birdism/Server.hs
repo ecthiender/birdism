@@ -60,4 +60,5 @@ appMToServantHandler ctx service =
         FlickrErrorUnexpected _    -> err500
       AEDbError _     -> err500
       AEConfigError _ -> err400
+      AEApiError    _ -> err400
     jsonHeader = ("Content-Type", "application/json;charset=utf-8")
