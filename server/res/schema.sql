@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS taxonomy (
   family_scientific_name TEXT,
   report_as TEXT,
   extinct BOOLEAN,
-  extinct_year INTEGER
+  extinct_year INTEGER,
+  family_code TEXT
 );
 
 CREATE TABLE IF NOT EXISTS region (
