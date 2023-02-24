@@ -3,6 +3,7 @@ module Worker.PopulateRegion where
 import           Control.Lens
 
 import qualified Control.Retry              as Retry
+import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as PG
 import qualified Say
 
@@ -24,9 +25,11 @@ populateRegion config = do
 
   -- Step 3: get the countries first
   countries <- runWithRetry getCountries _axEbirdConf
+  sayDebug $ "Retrieved all countries. " <> tshow (length countries) <> " countries..."
 
   -- Step 4.1: insert the countries into db
   insertRegions (_dbConnection _axDbConn) countries
+  sayDebug "countries written to DB"
 
   -- ~~Step 4.1: concurrently, get subnationals-1 of each country~~
   -- Step 5: get subnationals1 syncly
@@ -34,7 +37,15 @@ populateRegion config = do
 
   sayDebug $ "Total subnationals-1 is: " <> tshow (length subnats1)
 
-  forM_ subnats1 $ \subnat1 -> do
+  sayDebug $ "Filtering subnats-1 which we know don't have subnats-2: " <> tshow (length noSubNats2)
+  let filteredSubNats1 = filter checkPrefix subnats1
+      checkPrefix sns = case sns of
+        []     -> False
+        (sn:_) -> any (\countryCode -> not $ countryCode `T.isPrefixOf` uRegionCode (_rCode sn)) noSubNats2
+
+  sayDebug $ "Filtered subnationals-1 is: " <> tshow (length filteredSubNats1)
+
+  forM_ filteredSubNats1 $ \subnat1 -> do
     sayDebug $ "running one subnational1: " <> tshow subnat1
     subnats2 <- getSubnats2 ctx subnat1
     sayDebug $ "got " <> tshow (length subnats2) <> " subnational-2 regions"
@@ -63,7 +74,7 @@ populateRegion config = do
 
     getSubnats2 ctx subnats1 = do
       forM subnats1 $ \subnat1 -> do
-        sayDebug $ "getting subnational-2 region of subnational-1: " <> (uRegionCode $ _rCode subnat1)
+        sayDebug $ "getting subnational-2 region of subnational-1: " <> uRegionCode (_rCode subnat1)
         subnats2 <- runWithRetry (getSubnationa2Regions subnat1) ctx
         insertRegions (_dbConnection $ _axDbConn ctx) subnats2
         sleep 3
@@ -112,3 +123,6 @@ run trans cfg = do
 
 sayDebug :: (MonadIO m) => Text -> m ()
 sayDebug = Say.say . ("[DEBUG] " <>)
+
+noSubNats2 :: [Text]
+noSubNats2 = ["BF","BG","BR","BW","BO","BT","BJ","BZ","BE","BY","BB","BD","BH","BS","AZ","AT","AM","AG","AO","AD","DZ","AL","AF","BI","KH","CM","CV","BQ","KY","CF","TD","CN","CO","KM","CG","CR","CI","HR","CU","CY","CZ","DK","DJ","DM","DO","CD","EC","EG","SV","ER","EE","SZ","ET","FJ","FI","PF","GA","GM","GE","GH","GR","GD","GT","GN","GW","GY","HT","HN","HU","IS","IR","IQ","IL","IT","JM","JP","JO","KZ","KE","KI","KW","KG","LA","LV","LB","LS","LR","LY","LI","LT","LU","MG","MW","MY","MV","ML","MT","MH","MR","MU","FM","MD","MN","ME","MA","MZ","MM","NA","NR","NL","NI","NE","NG","MP","KP","MK","NO","OM","PK","PW","PA","PG","PY","PE","PH","PL","PR","QA","RO","RU","RW","SH","KN","LC","VC","WS","SM","ST","SA","SN","RS","SC","SL","SK","SI","SB","SO","ZA","KR","SS","SD","SR","SE","CH","SY","TW","TJ","TZ","TH","TL","TG","TO","TT","TN","TR","TM","TV","UG","UA","AE","UM","UY","UZ","VU","VE","VN","VI","YE","ZM","ZW"]

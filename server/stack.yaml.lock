@@ -3,24 +3,10 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages:
-- completed:
-    hackage: Spock-core-0.13.0.0@sha256:06e007f23c47bdda52d2927da54160d73f1b6f51a977f3ca9087275698db8f0a,3400
-    pantry-tree:
-      size: 1113
-      sha256: 86140298020f68bb09d07b26a6a6f1666fc3a02715d7986b09150727247a1a84
-  original:
-    hackage: Spock-core-0.13.0.0
-- completed:
-    hackage: reroute-0.5.0.0@sha256:3360747cdc700c9808a38bff48b75926efa443d4af282396082329a218a8d9d3,2446
-    pantry-tree:
-      size: 660
-      sha256: 52afcff0a5dba2fb746be4fa8cfa56cf774272872b61130537fe0e7ad463c0cd
-  original:
-    hackage: reroute-0.5.0.0
+packages: []
 snapshots:
 - completed:
-    size: 586296
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
-    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
-  original: lts-18.18
+    sha256: adbc602422dde10cc330175da7de8609e70afc41449a7e2d6e8b1827aa0e5008
+    size: 649342
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/11.yaml
+  original: lts-20.11
