@@ -1,8 +1,11 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Birdism.Types where
 
 import           Data.Hashable
 import           Data.Text                            (Text)
 import           GHC.Generics                         (Generic)
+import Data.Time (UTCTime)
 
 import qualified Data.Aeson                           as J
 import qualified Data.Aeson.Casing                    as J
@@ -87,6 +90,52 @@ data Checklist
   , cBirds  :: [Bird]
   } deriving (Show, Eq)
 
+-- | Recent location in which a species was observed
+data RecentSightingLocation = RecentSightingLocation
+  { _rslSpeciesCode :: SpeciesCode
+  , _rslCommonName :: CommonName
+  , _rslScientificName :: ScientificName
+  , _rslObservationDate :: Text
+  , _rslLocationId :: Text
+  , _rslLocation :: Location
+  , _rslLocationName :: Text
+  , _rslSubId :: Text
+  , _rslCount :: Maybe Int
+  , _rslObservationValid :: Bool
+  , _rslObservationReviewed :: Bool
+  , _rslLocationPrivate :: Bool
+  } deriving (Show, Eq, Generic)
+
+instance J.FromJSON RecentSightingLocation where
+  parseJSON = J.withObject "observation" $ \o -> do
+    _rslSpeciesCode <- o J..: "speciesCode"
+    _rslCommonName <- o J..: "comName"
+    _rslScientificName <- o J..: "sciName"
+    _rslObservationDate <- o J..: "obsDt"
+    _rslLocationId <- o J..: "locId"
+    _rslLocation <- Location <$> o J..: "lat" <*> o J..: "lng"
+    _rslLocationName <- o J..: "locName"
+    _rslSubId <- o J..: "subId"
+    _rslCount <- o J..:? "howMany"
+    _rslObservationValid <- o J..: "obsValid"
+    _rslObservationReviewed <- o J..: "obsReviewed"
+    _rslLocationPrivate <- o J..: "locationPrivate"
+    pure $ RecentSightingLocation{..}
+
+instance J.ToJSON RecentSightingLocation where
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
+
+-- | Location identified by latitude/longitude
+data Location = Location
+  { locationLatitude :: Double
+  , locationLongitude :: Double
+  } deriving (Show, Eq, Generic)
+
+instance J.ToJSON Location where
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
+
+instance J.FromJSON Location where
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
 type FamilyNames = [Family]
 type RegionNames = [Region]

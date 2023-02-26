@@ -27,7 +27,9 @@ type BirdismHttpAPIF f
 
   :<|> "api" :> "v1" :> "search" :> ReqBody '[JSON] SearchRequest :> Post '[JSON] (f SearchResult)
   :<|> "api" :> "v1" :> "search" :> "species" :> ReqBody '[JSON] SearchRequest :> Post '[JSON] (f [Bird])
-  :<|> "api" :> "v1" :> "search" :> "images" :> ReqBody '[JSON] SpeciesImageSearchRequest :> Post '[JSON] (f [ImgUrl])
+  :<|> "api" :> "v1" :> "search" :> "images" :> ReqBody '[JSON] SpeciesCodeRequest :> Post '[JSON] (f [ImgUrl])
+
+  :<|> "api" :> "v1" :> "species" :> "track" :> ReqBody '[JSON] SpeciesTrackRequest :> Post '[JSON] (f [RecentSightingLocation])
 
 
 type BirdismHttpAPI = BirdismHttpAPIF ApiResponse
@@ -45,6 +47,7 @@ birdismApiServer
   :<|> withApiResponse processSearch
   :<|> withApiResponse processSpeciesSearch
   :<|> withApiResponse processImageSearch
+  :<|> withApiResponse processSpeciesTrack
   where
     withApiResponse handler = fmap ApiResponse . handler
 
@@ -86,16 +89,29 @@ instance J.ToJSON SearchRequest where
   toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
 
 {- HLINT ignore "Use newtype instead of data" -}
-data SpeciesImageSearchRequest
-  = SpeciesImageSearchRequest
-  { _sisrSpeciesCode :: !SpeciesCode
+data SpeciesCodeRequest
+  = SpeciesCodeRequest
+  { _scrqSpeciesCode :: !SpeciesCode
   } deriving (Show, Eq, Generic)
 
-instance J.FromJSON SpeciesImageSearchRequest where
+instance J.FromJSON SpeciesCodeRequest where
   parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
 
-instance J.ToJSON SpeciesImageSearchRequest where
+instance J.ToJSON SpeciesCodeRequest where
   toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
+
+data SpeciesTrackRequest
+  = SpeciesTrackRequest
+  { _strqSpeciesCode :: !SpeciesCode
+  , _strqRegionCode :: !RegionCode
+  } deriving (Show, Eq, Generic)
+
+instance J.FromJSON SpeciesTrackRequest where
+  parseJSON = J.genericParseJSON (J.aesonPrefix J.snakeCase)
+
+instance J.ToJSON SpeciesTrackRequest where
+  toJSON = J.genericToJSON (J.aesonPrefix J.snakeCase)
+
 
 processSearch
   :: ( MonadIO m
@@ -142,8 +158,19 @@ processImageSearch
      , HasDbConfig r
      , MonadIO m
      )
-  => SpeciesImageSearchRequest -> m [ImgUrl]
-processImageSearch = getImagesBySpecies . _sisrSpeciesCode
+  => SpeciesCodeRequest -> m [ImgUrl]
+processImageSearch = getImagesBySpecies . _scrqSpeciesCode
+
+processSpeciesTrack
+  :: ( MonadReader r m
+     , HasEBirdConf r
+     , MonadError e m
+     , AsEbirdError e
+     , MonadIO m
+     )
+  => SpeciesTrackRequest -> m [RecentSightingLocation]
+processSpeciesTrack (SpeciesTrackRequest species region) =
+  getRecentSightingsOfSpeciesInRegion species region
 
 newtype FamilyScientificNameRequest
   = FamilyScientificNameRequest { _gfsnrName :: CommonName }

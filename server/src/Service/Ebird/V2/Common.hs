@@ -9,6 +9,7 @@ import qualified Data.Text.Encoding as T
 import           Birdism.Common
 import           Birdism.Config
 import           HTTP
+import qualified Network.Wreq           as W
 
 -- | Helper function to call the EBird API
 ebirdApiGetService
@@ -21,12 +22,13 @@ ebirdApiGetService
      )
   => String
   -- ^ the complete URL
+  -> Maybe W.Options
   -> m a
   -- ^ return parsed type from expected JSON response
-ebirdApiGetService url = do
+ebirdApiGetService url options = do
   r <- ask
   let token = r ^. ebcToken
-  resp <- runExceptT $ httpGetJSON url Nothing [("X-eBirdApiToken", T.encodeUtf8 token)]
+  resp <- runExceptT $ httpGetJSON url options [("X-eBirdApiToken", T.encodeUtf8 token)]
   case resp of
     Left e    -> throwError $ httpErrToEbirdError e
     Right res -> return res

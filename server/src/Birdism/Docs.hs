@@ -95,10 +95,20 @@ instance ToSample CommonName where
                         , CommonName "Blue-faced Malkoha"
                         ]
 
-instance ToSample SpeciesImageSearchRequest where
-  toSamples _ = samples [ SpeciesImageSearchRequest (SpeciesCode "blfmal1")
-                        , SpeciesImageSearchRequest (SpeciesCode "brnowl")
+instance ToSample SpeciesCodeRequest where
+  toSamples _ = samples [ SpeciesCodeRequest (SpeciesCode "blfmal1")
+                        , SpeciesCodeRequest (SpeciesCode "brnowl")
                         ]
+
+instance ToSample SpeciesTrackRequest where
+  toSamples _ = samples [ SpeciesTrackRequest (SpeciesCode "blfmal1") (RegionCode "IN-KA")
+                        , SpeciesTrackRequest (SpeciesCode "brnowl") (RegionCode "IN-WB")
+                        ]
+
+instance ToSample RecentSightingLocation where
+  toSamples _ = samples [ RecentSightingLocation undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined
+                        ]
+
 
 apiDocs :: API
 apiDocs = docs (pretty serverProxy)

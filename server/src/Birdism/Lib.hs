@@ -3,6 +3,7 @@ module Birdism.Lib
   , getSpeciesByRegionFamily
   , getImagesBySpecies
   , getImagesOfManySpecies
+  , getRecentSightingsOfSpeciesInRegion
   , Family
   , Region (..)
   , SearchResult
@@ -11,18 +12,16 @@ module Birdism.Lib
   , ImgUrl (..)
   ) where
 
+import qualified Control.Concurrent.Async as Async
+import qualified Data.Aeson               as J
+import Control.Lens ((#))
 import           Birdism.Common
 import           Birdism.Config
 import           Birdism.Types
 import           Service.Flickr.Context   (FlickrError, AsFlickrError)
-
-import qualified Control.Concurrent.Async as Async
-import qualified Data.Aeson               as J
-
 import qualified Birdism.Data             as Data
 import qualified Service.Ebird            as ServiceEbird
 import qualified Service.Flickr.Photos    as ServiceFlickr
-import Control.Lens ((#))
 
 newtype ImgUrl = ImgUrl { unImgUrl :: Text }
   deriving stock (Show, Eq)
@@ -128,3 +127,14 @@ getImages birds = do
       r <- ask
       liftIO $ Async.forConcurrently birds $
         flip runReaderT r . runExceptT . ServiceFlickr.searchPhotos . uCommonName
+
+getRecentSightingsOfSpeciesInRegion
+  :: ( MonadIO m
+     , MonadReader r m
+     , MonadError e m
+     , HasEBirdConf r
+     , AsEbirdError e
+     )
+  => SpeciesCode -> RegionCode -> m [RecentSightingLocation]
+getRecentSightingsOfSpeciesInRegion =
+  ServiceEbird.recentObservationsOfSpeciesInRegion
