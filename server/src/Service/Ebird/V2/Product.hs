@@ -32,6 +32,6 @@ getSpeciesListByRegion region = do
   Cache.lookupEbirdCache reg cache >>= \case
     Just spList -> pure spList
     Nothing -> do
-      spList <- ebirdApiGetService $ speciesListByRegionUrl reg
+      spList <- ebirdApiGetService (speciesListByRegionUrl reg) Nothing
       Cache.writeEbirdCache reg spList cache
       pure spList

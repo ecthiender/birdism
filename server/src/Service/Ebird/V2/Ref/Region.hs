@@ -66,7 +66,7 @@ getCountries
      , MonadIO m
      )
   => m [RRegion Country]
-getCountries = ebirdApiGetService countriesListUrl
+getCountries = ebirdApiGetService countriesListUrl Nothing
 
 getSubnationa1Regions
   :: ( MonadReader r m
@@ -77,7 +77,7 @@ getSubnationa1Regions
      )
   => RRegion Country -> m [RRegion Subnational1]
 getSubnationa1Regions country =
-  ebirdApiGetService (subnational1ListUrl $ uRegionCode $ _rCode country)
+  ebirdApiGetService (subnational1ListUrl $ uRegionCode $ _rCode country) Nothing
 
 getSubnationa2Regions
   :: ( MonadReader r m
@@ -88,7 +88,7 @@ getSubnationa2Regions
      )
   => RRegion Subnational1 -> m [RRegion Subnational2]
 getSubnationa2Regions subnat1 =
-  ebirdApiGetService (subnational2ListUrl $ uRegionCode $ _rCode subnat1)
+  ebirdApiGetService (subnational2ListUrl $ uRegionCode $ _rCode subnat1) Nothing
 
 subregionListUrl :: String
 subregionListUrl = "https://ebird.org/ws2.0/ref/region/list/subnational2/IN.json"
@@ -102,4 +102,4 @@ getSubRegions
      )
   => m SubRegions
 getSubRegions = do
-  ebirdApiGetService subregionListUrl
+  ebirdApiGetService subregionListUrl Nothing
